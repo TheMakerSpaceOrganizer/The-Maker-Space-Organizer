@@ -216,6 +216,7 @@
             this.data = [];
             this.zones = [];
             this.inventoryItems = [];
+            this.lastSelectedShelfId = null; // Track sticky selection
 
             // Define Sub-Zones (Shelves/Drawers)
             this.subZones = {
@@ -244,6 +245,13 @@
                     { id: 'zone-e-top-left-2', name: 'Top Cabinet: Left Drawer 2' },
                     { id: 'zone-e-top-right-1', name: 'Top Cabinet: Right Drawer 1' },
                     { id: 'zone-e-top-right-2', name: 'Top Cabinet: Right Drawer 2' },
+
+                    // MISC BINS (Desktop)
+                    { id: 'zone-e-misc-1', name: 'Misc Bin 1' },
+                    { id: 'zone-e-misc-2', name: 'Misc Bin 2' },
+                    { id: 'zone-e-misc-3', name: 'Misc Bin 3' },
+                    { id: 'zone-e-misc-4', name: 'Misc Bin 4' },
+                    { id: 'zone-e-misc-5', name: 'Misc Bin 5' },
 
                     // PLASTIC 4-DRAWER UNITS (x2)
                     { id: 'zone-e-4d-1-1', name: 'Plastic 4-Drawer Unit 1: Drawer 1' },
@@ -423,7 +431,8 @@
             // Shelf Selector
             contentHtml += '<select id="new-item-shelf-' + zone.id + '" class="p-2 border rounded shadow-sm bg-white outline-none">';
             shelves.forEach(function (shelf) {
-                contentHtml += '<option value="' + shelf.id + '">' + shelf.name + '</option>';
+                var isSelected = (self.lastSelectedShelfId === shelf.id) ? 'selected' : '';
+                contentHtml += '<option value="' + shelf.id + '" ' + isSelected + '>' + shelf.name + '</option>';
             });
             contentHtml += '</select>';
 
@@ -516,6 +525,7 @@
                     var storageId = select.value;
 
                     if (text && storageId) {
+                        self.lastSelectedShelfId = storageId; // Save selection
                         self.addInventoryItem(storageId, text);
                         setTimeout(function () { self.openModal(zone.id); }, 50);
                     }
