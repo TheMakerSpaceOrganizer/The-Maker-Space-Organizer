@@ -2,9 +2,6 @@
 <html lang="en" class="h-full">
 
 <head>
-    <link rel="icon" href="icon.png" type="image/png">
-<link rel="apple-touch-icon" href="icon.png">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Maker Space Organizer</title>
@@ -222,118 +219,154 @@
             this.lastSelectedShelfId = null; // Track sticky selection
 
             // Define Sub-Zones (Shelves/Drawers)
-            this.subZones = {
-                'zone-a': [
-                    { id: 'zone-a-shelf-1', name: 'Shelf 1 (Top)' },
-                    { id: 'zone-a-shelf-2', name: 'Shelf 2' },
-                    { id: 'zone-a-shelf-3', name: 'Shelf 3' },
-                    { id: 'zone-a-shelf-4', name: 'Shelf 4 (Bottom)' }
-                ],
-                'zone-b': [
-                    { id: 'zone-b-hanging', name: 'Hanging Space' },
-                    { id: 'zone-b-top', name: 'Top Shelf' },
-                    { id: 'zone-b-cabinet', name: 'Cabinet' },
-                    { id: 'zone-b-cart-1', name: 'Rolling Cart 1' },
-                    { id: 'zone-b-cart-2', name: 'Rolling Cart 2' }
-                ],
-                'zone-d': [
-                    { id: 'zone-d-left-1', name: 'Left Drawer 1 (Top)' },
-                    { id: 'zone-d-left-2', name: 'Left Drawer 2 (Bottom)' },
-                    { id: 'zone-d-right-1', name: 'Right Drawer 1 (Top)' },
-                    { id: 'zone-d-right-2', name: 'Right Drawer 2 (Bottom)' }
-                ],
-                'zone-e': [
-                    // TOP CABINET
-                    { id: 'zone-e-top-left-1', name: 'Top Cabinet: Left Drawer 1' },
-                    { id: 'zone-e-top-left-2', name: 'Top Cabinet: Left Drawer 2' },
-                    { id: 'zone-e-top-right-1', name: 'Top Cabinet: Right Drawer 1' },
-                    { id: 'zone-e-top-right-2', name: 'Top Cabinet: Right Drawer 2' },
+            var savedLayouts = localStorage.getItem('maker_space_layouts_v1');
+            if (savedLayouts) {
+                this.subZones = JSON.parse(savedLayouts);
+            } else {
+                this.subZones = {
+                    'zone-a': [
+                        { id: 'zone-a-shelf-1', name: 'Shelf 1 (Top)' },
+                        { id: 'zone-a-shelf-2', name: 'Shelf 2' },
+                        { id: 'zone-a-shelf-3', name: 'Shelf 3' },
+                        { id: 'zone-a-shelf-4', name: 'Shelf 4 (Bottom)' }
+                    ],
+                    'zone-b': [
+                        { id: 'zone-b-hanging', name: 'Hanging Space' },
+                        { id: 'zone-b-top', name: 'Top Shelf' },
+                        { id: 'zone-b-cabinet', name: 'Cabinet' },
+                        { id: 'zone-b-cart-1', name: 'Rolling Cart 1' },
+                        { id: 'zone-b-cart-2', name: 'Rolling Cart 2' }
+                    ],
+                    'zone-d': [
+                        { id: 'zone-d-left-1', name: 'Left Drawer 1 (Top)' },
+                        { id: 'zone-d-left-2', name: 'Left Drawer 2 (Bottom)' },
+                        { id: 'zone-d-right-1', name: 'Right Drawer 1 (Top)' },
+                        { id: 'zone-d-right-2', name: 'Right Drawer 2 (Bottom)' }
+                    ],
+                    'zone-e': [
+                        // TOP CABINET
+                        { id: 'zone-e-top-left-1', name: 'Top Cabinet: Left Drawer 1' },
+                        { id: 'zone-e-top-left-2', name: 'Top Cabinet: Left Drawer 2' },
+                        { id: 'zone-e-top-right-1', name: 'Top Cabinet: Right Drawer 1' },
+                        { id: 'zone-e-top-right-2', name: 'Top Cabinet: Right Drawer 2' },
 
-                    // MISC BINS (Desktop)
-                    { id: 'zone-e-misc-1', name: 'Misc Bin 1' },
-                    { id: 'zone-e-misc-2', name: 'Misc Bin 2' },
-                    { id: 'zone-e-misc-3', name: 'Misc Bin 3' },
-                    { id: 'zone-e-misc-4', name: 'Misc Bin 4' },
-                    { id: 'zone-e-misc-5', name: 'Misc Bin 5' },
+                        // MISC BINS (Desktop)
+                        { id: 'zone-e-misc-1', name: 'Misc Bins: Bin 1' },
+                        { id: 'zone-e-misc-2', name: 'Misc Bins: Bin 2' },
+                        { id: 'zone-e-misc-3', name: 'Misc Bins: Bin 3' },
+                        { id: 'zone-e-misc-4', name: 'Misc Bins: Bin 4' },
+                        { id: 'zone-e-misc-5', name: 'Misc Bins: Bin 5' },
 
-                    // PLASTIC 4-DRAWER UNITS (x2)
-                    { id: 'zone-e-4d-1-1', name: 'Plastic 4-Drawer Unit 1: Drawer 1' },
-                    { id: 'zone-e-4d-1-2', name: 'Plastic 4-Drawer Unit 1: Drawer 2' },
-                    { id: 'zone-e-4d-1-3', name: 'Plastic 4-Drawer Unit 1: Drawer 3' },
-                    { id: 'zone-e-4d-1-4', name: 'Plastic 4-Drawer Unit 1: Drawer 4' },
+                        // PLASTIC 4-DRAWER UNITS (x2)
+                        { id: 'zone-e-4d-1-1', name: 'Plastic 4-Drawer Unit 1: Drawer 1' },
+                        { id: 'zone-e-4d-1-2', name: 'Plastic 4-Drawer Unit 1: Drawer 2' },
+                        { id: 'zone-e-4d-1-3', name: 'Plastic 4-Drawer Unit 1: Drawer 3' },
+                        { id: 'zone-e-4d-1-4', name: 'Plastic 4-Drawer Unit 1: Drawer 4' },
 
-                    { id: 'zone-e-4d-2-1', name: 'Plastic 4-Drawer Unit 2: Drawer 1' },
-                    { id: 'zone-e-4d-2-2', name: 'Plastic 4-Drawer Unit 2: Drawer 2' },
-                    { id: 'zone-e-4d-2-3', name: 'Plastic 4-Drawer Unit 2: Drawer 3' },
-                    { id: 'zone-e-4d-2-4', name: 'Plastic 4-Drawer Unit 2: Drawer 4' },
+                        { id: 'zone-e-4d-2-1', name: 'Plastic 4-Drawer Unit 2: Drawer 1' },
+                        { id: 'zone-e-4d-2-2', name: 'Plastic 4-Drawer Unit 2: Drawer 2' },
+                        { id: 'zone-e-4d-2-3', name: 'Plastic 4-Drawer Unit 2: Drawer 3' },
+                        { id: 'zone-e-4d-2-4', name: 'Plastic 4-Drawer Unit 2: Drawer 4' },
 
-                    // PLASTIC 5-DRAWER UNITS (x2)
-                    { id: 'zone-e-5d-1-1', name: 'Plastic 5-Drawer Unit 1: Drawer 1' },
-                    { id: 'zone-e-5d-1-2', name: 'Plastic 5-Drawer Unit 1: Drawer 2' },
-                    { id: 'zone-e-5d-1-3', name: 'Plastic 5-Drawer Unit 1: Drawer 3' },
-                    { id: 'zone-e-5d-1-4', name: 'Plastic 5-Drawer Unit 1: Drawer 4' },
-                    { id: 'zone-e-5d-1-5', name: 'Plastic 5-Drawer Unit 1: Drawer 5' },
+                        // PLASTIC 5-DRAWER UNITS (x2)
+                        { id: 'zone-e-5d-1-1', name: 'Plastic 5-Drawer Unit 1: Drawer 1' },
+                        { id: 'zone-e-5d-1-2', name: 'Plastic 5-Drawer Unit 1: Drawer 2' },
+                        { id: 'zone-e-5d-1-3', name: 'Plastic 5-Drawer Unit 1: Drawer 3' },
+                        { id: 'zone-e-5d-1-4', name: 'Plastic 5-Drawer Unit 1: Drawer 4' },
+                        { id: 'zone-e-5d-1-5', name: 'Plastic 5-Drawer Unit 1: Drawer 5' },
 
-                    { id: 'zone-e-5d-2-1', name: 'Plastic 5-Drawer Unit 2: Drawer 1' },
-                    { id: 'zone-e-5d-2-2', name: 'Plastic 5-Drawer Unit 2: Drawer 2' },
-                    { id: 'zone-e-5d-2-3', name: 'Plastic 5-Drawer Unit 2: Drawer 3' },
-                    { id: 'zone-e-5d-2-4', name: 'Plastic 5-Drawer Unit 2: Drawer 4' },
-                    { id: 'zone-e-5d-2-5', name: 'Plastic 5-Drawer Unit 2: Drawer 5' },
+                        { id: 'zone-e-5d-2-1', name: 'Plastic 5-Drawer Unit 2: Drawer 1' },
+                        { id: 'zone-e-5d-2-2', name: 'Plastic 5-Drawer Unit 2: Drawer 2' },
+                        { id: 'zone-e-5d-2-3', name: 'Plastic 5-Drawer Unit 2: Drawer 3' },
+                        { id: 'zone-e-5d-2-4', name: 'Plastic 5-Drawer Unit 2: Drawer 4' },
+                        { id: 'zone-e-5d-2-5', name: 'Plastic 5-Drawer Unit 2: Drawer 5' },
 
-                    // PLASTIC 6-DRAWER UNITS (x2)
-                    { id: 'zone-e-6d-1-1', name: 'Plastic 6-Drawer Unit 1: Drawer 1' },
-                    { id: 'zone-e-6d-1-2', name: 'Plastic 6-Drawer Unit 1: Drawer 2' },
-                    { id: 'zone-e-6d-1-3', name: 'Plastic 6-Drawer Unit 1: Drawer 3' },
-                    { id: 'zone-e-6d-1-4', name: 'Plastic 6-Drawer Unit 1: Drawer 4' },
-                    { id: 'zone-e-6d-1-5', name: 'Plastic 6-Drawer Unit 1: Drawer 5' },
-                    { id: 'zone-e-6d-1-6', name: 'Plastic 6-Drawer Unit 1: Drawer 6' },
+                        // PLASTIC 6-DRAWER UNITS (x2)
+                        { id: 'zone-e-6d-1-1', name: 'Plastic 6-Drawer Unit 1: Drawer 1' },
+                        { id: 'zone-e-6d-1-2', name: 'Plastic 6-Drawer Unit 1: Drawer 2' },
+                        { id: 'zone-e-6d-1-3', name: 'Plastic 6-Drawer Unit 1: Drawer 3' },
+                        { id: 'zone-e-6d-1-4', name: 'Plastic 6-Drawer Unit 1: Drawer 4' },
+                        { id: 'zone-e-6d-1-5', name: 'Plastic 6-Drawer Unit 1: Drawer 5' },
+                        { id: 'zone-e-6d-1-6', name: 'Plastic 6-Drawer Unit 1: Drawer 6' },
 
-                    { id: 'zone-e-6d-2-1', name: 'Plastic 6-Drawer Unit 2: Drawer 1' },
-                    { id: 'zone-e-6d-2-2', name: 'Plastic 6-Drawer Unit 2: Drawer 2' },
-                    { id: 'zone-e-6d-2-3', name: 'Plastic 6-Drawer Unit 2: Drawer 3' },
-                    { id: 'zone-e-6d-2-4', name: 'Plastic 6-Drawer Unit 2: Drawer 4' },
-                    { id: 'zone-e-6d-2-5', name: 'Plastic 6-Drawer Unit 2: Drawer 5' },
-                    { id: 'zone-e-6d-2-6', name: 'Plastic 6-Drawer Unit 2: Drawer 6' },
+                        { id: 'zone-e-6d-2-1', name: 'Plastic 6-Drawer Unit 2: Drawer 1' },
+                        { id: 'zone-e-6d-2-2', name: 'Plastic 6-Drawer Unit 2: Drawer 2' },
+                        { id: 'zone-e-6d-2-3', name: 'Plastic 6-Drawer Unit 2: Drawer 3' },
+                        { id: 'zone-e-6d-2-4', name: 'Plastic 6-Drawer Unit 2: Drawer 4' },
+                        { id: 'zone-e-6d-2-5', name: 'Plastic 6-Drawer Unit 2: Drawer 5' },
+                        { id: 'zone-e-6d-2-6', name: 'Plastic 6-Drawer Unit 2: Drawer 6' },
 
-                    // BOTTOM SHELVES
-                    { id: 'zone-e-bot-1-1', name: 'Bottom Shelf 1: Bin 1' },
-                    { id: 'zone-e-bot-1-2', name: 'Bottom Shelf 1: Bin 2' },
-                    { id: 'zone-e-bot-2-1', name: 'Bottom Shelf 2: Bin 1' },
-                    { id: 'zone-e-bot-2-2', name: 'Bottom Shelf 2: Bin 2' }
-                ],
-                'zone-f': [
-                    { id: 'zone-f-bin-1', name: 'Under Table Bin 1' },
-                    { id: 'zone-f-bin-2', name: 'Under Table Bin 2' }
-                ],
-                'zone-g': [
-                    { id: 'zone-g-top-bin', name: 'Plastic Bin (Top)' },
-                    { id: 'zone-g-cube-1', name: 'Cube 1' },
-                    { id: 'zone-g-cube-2', name: 'Cube 2' },
-                    { id: 'zone-g-cube-3', name: 'Cube 3' },
-                    { id: 'zone-g-cube-4', name: 'Cube 4' },
-                    { id: 'zone-g-cube-5', name: 'Cube 5 (Center)' },
-                    { id: 'zone-g-cube-6', name: 'Cube 6' },
-                    { id: 'zone-g-cube-7', name: 'Cube 7' },
-                    { id: 'zone-g-cube-8', name: 'Cube 8' },
-                    { id: 'zone-g-cube-9', name: 'Cube 9' }
-                ],
-                'zone-h': [
-                    { id: 'zone-h-basket-1', name: 'Basket 1' },
-                    { id: 'zone-h-basket-2', name: 'Basket 2' },
-                    { id: 'zone-h-basket-3', name: 'Basket 3' },
-                    { id: 'zone-h-basket-4', name: 'Basket 4' },
-                    { id: 'zone-h-hook-1', name: 'Hook 1' },
-                    { id: 'zone-h-hook-2', name: 'Hook 2' },
-                    { id: 'zone-h-hook-3', name: 'Hook 3' },
-                    { id: 'zone-h-hook-4', name: 'Hook 4' },
-                    { id: 'zone-h-hook-5', name: 'Hook 5' }
-                ],
-                // Add more as needed, others get default
-            };
+                        // BOTTOM SHELVES
+                        { id: 'zone-e-bot-1-1', name: 'Bottom Shelf 1: Bin 1' },
+                        { id: 'zone-e-bot-1-2', name: 'Bottom Shelf 1: Bin 2' },
+                        { id: 'zone-e-bot-2-1', name: 'Bottom Shelf 2: Bin 1' },
+                        { id: 'zone-e-bot-2-2', name: 'Bottom Shelf 2: Bin 2' }
+                    ],
+                    'zone-f': [
+                        { id: 'zone-f-bin-1', name: 'Under Table Bin 1' },
+                        { id: 'zone-f-bin-2', name: 'Under Table Bin 2' }
+                    ],
+                    'zone-g': [
+                        { id: 'zone-g-top-bin', name: 'Plastic Bin (Top)' },
+                        { id: 'zone-g-cube-1', name: 'Cube 1' },
+                        { id: 'zone-g-cube-2', name: 'Cube 2' },
+                        { id: 'zone-g-cube-3', name: 'Cube 3' },
+                        { id: 'zone-g-cube-4', name: 'Cube 4' },
+                        { id: 'zone-g-cube-5', name: 'Cube 5 (Center)' },
+                        { id: 'zone-g-cube-6', name: 'Cube 6' },
+                        { id: 'zone-g-cube-7', name: 'Cube 7' },
+                        { id: 'zone-g-cube-8', name: 'Cube 8' },
+                        { id: 'zone-g-cube-9', name: 'Cube 9' }
+                    ],
+                    'zone-h': [
+                        { id: 'zone-h-basket-1', name: 'Basket 1' },
+                        { id: 'zone-h-basket-2', name: 'Basket 2' },
+                        { id: 'zone-h-basket-3', name: 'Basket 3' },
+                        { id: 'zone-h-basket-4', name: 'Basket 4' },
+                        { id: 'zone-h-hook-1', name: 'Hook 1' },
+                        { id: 'zone-h-hook-2', name: 'Hook 2' },
+                        { id: 'zone-h-hook-3', name: 'Hook 3' },
+                        { id: 'zone-h-hook-4', name: 'Hook 4' },
+                        { id: 'zone-h-hook-5', name: 'Hook 5' }
+                    ],
+                    // Add more as needed, others get default
+                };
+                this.saveLayouts();
+            }
 
             this.setupEventListeners();
-            if (window.dataSdk) window.dataSdk.subscribe(this);
+            if (window.dataSdk) {
+                window.dataSdk.subscribe(this);
+                // One-time fix: re-letter zones to close gap caused by C becoming Main
+                var self = this;
+                setTimeout(function () { self.reletterZones(); }, 500);
+            }
         }
+
+        CraftSpaceApp.prototype.reletterZones = function () {
+            var allZones = this.zones.concat([]);
+            var others = allZones.filter(function (z) { return z.id !== 'zone-c'; });
+
+            // Sort by ID to keep logical order: A, B, D, E...
+            others.sort(function (a, b) { return a.id.localeCompare(b.id); });
+
+            var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            var changed = false;
+
+            others.forEach(function (z, idx) {
+                var newLetter = letters[idx];
+                if (z.letter !== newLetter) {
+                    console.log("Renumbering", z.title, "from", z.letter, "to", newLetter);
+                    z.letter = newLetter;
+                    window.dataSdk.update(z);
+                    changed = true;
+                }
+            });
+        };
+
+        CraftSpaceApp.prototype.saveLayouts = function () {
+            localStorage.setItem('maker_space_layouts_v1', JSON.stringify(this.subZones));
+        };
 
         CraftSpaceApp.prototype.onDataChanged = function (newData) {
             this.data = newData || [];
@@ -366,19 +399,52 @@
             if (!grid) return;
             grid.innerHTML = '';
             var self = this;
+
+            // Sort: Zone C first, then alpha
+            this.zones.sort(function (a, b) {
+                if (a.id === 'zone-c') return -1;
+                if (b.id === 'zone-c') return 1;
+                return (a.letter || '').localeCompare(b.letter || '');
+            });
+
             this.zones.forEach(function (zone) {
                 var btn = document.createElement('button');
-                btn.className = "zone-btn w-full p-5 rounded-2xl flex items-center gap-4 text-left transition-all hover:scale-[1.02] shadow-sm";
-                btn.style.backgroundColor = "#ffffff";
-                btn.style.border = "3px solid #2d3748";
 
-                var html = '<div class="w-16 h-16 rounded-xl flex items-center justify-center" style="background-color: ' + zone.color + ';">';
-                html += '<span class="text-white font-bold text-xl">' + (zone.letter || '') + '</span></div>';
-                html += '<div class="flex-1">';
-                html += '<span class="block text-sm font-bold" style="color: ' + zone.color + ';">ZONE ' + zone.letter + '</span>';
-                html += '<span class="block text-xl font-bold" style="color: #2d3748;">' + zone.title + '</span></div>';
+                // Base classes
+                var classes = "zone-btn w-full p-5 rounded-2xl flex items-center gap-4 text-left transition-all hover:scale-[1.02] shadow-sm ";
 
-                btn.innerHTML = html;
+                // Hero Styling for Command Center (Zone C)
+                if (zone.id === 'zone-c') {
+                    classes += "col-span-full bg-slate-100 border-4 border-slate-700 shadow-md transform hover:-translate-y-1";
+                    btn.style.backgroundColor = "#f1f5f9"; // Slate-100
+                    btn.style.border = "4px solid " + zone.color;
+                } else {
+                    classes += "bg-white border-2 border-gray-700";
+                    btn.style.backgroundColor = "#ffffff";
+                    btn.style.border = "3px solid #2d3748";
+                }
+
+                btn.className = classes;
+
+                // Render Content
+                if (zone.id === 'zone-c') {
+                    // HERO CONTENT (No Letter)
+                    var html = '<div class="w-16 h-16 rounded-xl flex items-center justify-center shadow-inner" style="background-color: ' + zone.color + ';">';
+                    html += '<span class="text-white font-bold text-2xl">★</span></div>';
+                    html += '<div class="flex-1">';
+                    html += '<span class="block text-sm font-bold opacity-0">.</span>'; // Spacer
+                    html += '<span class="block text-2xl font-bold text-gray-800">' + zone.title + '</span></div>';
+                    btn.innerHTML = html;
+                } else {
+                    // STANDARD CONTENT
+                    var html = '<div class="w-16 h-16 rounded-xl flex items-center justify-center" style="background-color: ' + zone.color + ';">';
+                    html += '<span class="text-white font-bold text-xl">' + (zone.letter || '') + '</span></div>';
+                    html += '<div class="flex-1">';
+                    html += '<span class="block text-sm font-bold" style="color: ' + zone.color + ';">ZONE ' + zone.letter + '</span>';
+                    html += '<span class="block text-xl font-bold" style="color: #2d3748;">' + zone.title + '</span></div>';
+                    btn.innerHTML = html;
+                }
+
                 btn.onclick = function () { self.openModal(zone.id); };
                 grid.appendChild(btn);
             });
@@ -419,8 +485,9 @@
             var contentHtml = '<div class="modal-content w-full max-w-lg mx-auto rounded-2xl p-6 shadow-xl max-h-[90vh] overflow-y-auto" style="background-color: #ffffff; border: 3px solid ' + zone.color + ';">';
 
             // Header
-            contentHtml += '<div class="flex items-center justify-between mb-6">';
-            contentHtml += '<h2 class="text-2xl font-bold" style="color: ' + zone.color + ';">' + zone.title + '</h2>';
+            contentHtml += '<div class="flex items-center justify-between mb-6 gap-2">';
+            contentHtml += '<h2 class="text-2xl font-bold flex-1" style="color: ' + zone.color + ';">' + zone.title + '</h2>';
+            contentHtml += '<button class="manage-btn text-xs font-bold px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700">⚙ EDIT LAYOUT</button>';
             contentHtml += '<button class="close-btn p-2 bg-gray-100 rounded hover:bg-gray-200">CLOSE X</button>';
             contentHtml += '</div>';
 
@@ -449,51 +516,103 @@
             // CONTENT AREA (Grouped by Shelf)
             contentHtml += '<div class="space-y-6">';
 
-            var prevPrefix = "";
+            var groups = {};
+            shelves.forEach(function (s) {
+                var key = s.name.split(':')[0] || s.name;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(s);
+            });
 
-            shelves.forEach(function (shelf) {
-                // Determine prefix (everything before ':') to group visually
-                // e.g. "Plastic 4-Drawer Unit 1"
-                var prefix = shelf.name.split(':')[0] || shelf.name;
+            // Default to collapsed for complex zones (Zone E)
+            var startOpen = false;
 
-                // Add spacer if new group (and not first)
-                if (prevPrefix && prefix !== prevPrefix) {
-                    contentHtml += '<div class="border-t-4 border-gray-100 my-6"></div>';
-                }
-                prevPrefix = prefix;
+            Object.keys(groups).forEach(function (groupName) {
+                var groupShelves = groups[groupName];
 
-                // Filter items for this specific shelf/sub-zone
-                var items = self.inventoryItems.filter(function (i) { return i.storageId === shelf.id; });
+                contentHtml += '<details class="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden group" ' + (startOpen ? 'open' : '') + '>';
+                contentHtml += '<summary class="cursor-pointer p-3 font-bold bg-gray-50 hover:bg-gray-100 flex items-center justify-between select-none">';
+                contentHtml += '<span>' + groupName + '</span>';
+                contentHtml += '<span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>';
+                contentHtml += '</summary>';
+                contentHtml += '<div class="p-4 space-y-6 bg-white">';
 
-                contentHtml += '<div>';
-                contentHtml += '<h3 class="font-bold text-gray-700 text-sm border-b pb-1 mb-2">' + shelf.name + '</h3>';
+                groupShelves.forEach(function (shelf) {
+                    var items = self.inventoryItems.filter(function (i) { return i.storageId === shelf.id; });
 
-                if (items.length > 0) {
-                    contentHtml += '<ul class="divide-y divide-gray-100">';
-                    items.forEach(function (item) {
-                        contentHtml += '<li class="py-2 text-md flex items-center justify-between group">';
-                        contentHtml += '<span class="flex-1">' + item.text + '</span>';
-                        contentHtml += '<div class="flex gap-2 ml-4">'; // REMOVED OPACITY CLASSES
-                        contentHtml += '<button class="edit-btn text-blue-500 hover:text-blue-700 font-bold text-xs px-2 py-1 bg-blue-50 rounded" data-id="' + item.id + '">EDIT</button>';
-                        contentHtml += '<button class="delete-btn text-red-500 hover:text-red-700 font-bold text-xs px-2 py-1 bg-red-50 rounded" data-id="' + item.id + '">DEL</button>';
-                        contentHtml += '</div>';
-                        contentHtml += '</li>';
-                    });
-                    contentHtml += '</ul>';
-                } else {
-                    contentHtml += '<p class="text-gray-400 text-sm italic">Empty</p>';
-                }
-                contentHtml += '</div>';
+                    // Show Sub-Header only if it differs from group name or if group has multiple shelves
+                    // e.g. "Misc Bins: Bin 1" -> Sub header "Bin 1"
+                    var subHeader = shelf.name;
+                    if (subHeader.indexOf(':') > -1) subHeader = subHeader.split(':')[1].trim();
+
+                    // If purely singleton "Shelf 1" == "Shelf 1", maybe hide subheader? 
+                    // But safety first: show it unless it's identical.
+                    if (groupShelves.length > 1 || subHeader !== groupName) {
+                        contentHtml += '<h3 class="font-bold text-gray-700 text-sm border-b pb-1 mb-2">' + subHeader + '</h3>';
+                    }
+
+                    if (items.length > 0) {
+                        contentHtml += '<ul class="divide-y divide-gray-100 mb-4">';
+                        items.forEach(function (item) {
+                            contentHtml += '<li class="py-2 text-md flex items-center justify-between group">';
+                            contentHtml += '<span class="flex-1">' + item.text + '</span>';
+                            contentHtml += '<div class="flex gap-2 ml-4">';
+                            contentHtml += '<button class="edit-btn text-blue-500 hover:text-blue-700 font-bold text-xs px-2 py-1 bg-blue-50 rounded" data-id="' + item.id + '">EDIT</button>';
+                            contentHtml += '<button class="delete-btn text-red-500 hover:text-red-700 font-bold text-xs px-2 py-1 bg-red-50 rounded" data-id="' + item.id + '">DEL</button>';
+                            contentHtml += '</div></li>';
+                        });
+                        contentHtml += '</ul>';
+                    } else {
+                        contentHtml += '<div class="text-gray-400 text-sm italic mb-4">Empty</div>';
+                    }
+                });
+
+                contentHtml += '</div></details>';
             });
 
             contentHtml += '</div>'; // End content space
             contentHtml += '</div>'; // End modal-content
 
             div.innerHTML = contentHtml;
+            document.body.appendChild(div);
+
+            // Auto-Accordion Logic
+            var select = document.getElementById('new-item-shelf-' + zone.id);
+            var detailsList = div.querySelectorAll('details');
+
+            function syncAccordion() {
+                var selectedId = select.value;
+                var shelf = shelves.find(function (s) { return s.id === selectedId; });
+                if (!shelf) return;
+                var prefix = shelf.name.split(':')[0] || shelf.name;
+
+                detailsList.forEach(function (dt) {
+                    var summary = dt.querySelector('summary span').innerText;
+
+                    // Match prefix. If match, OPEN. If not, CLOSE (to focus view).
+                    if (summary === prefix) {
+                        dt.open = true;
+                        // Optional: dt.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        dt.open = false;
+                    }
+                });
+            }
+
+            if (select) {
+                select.onchange = syncAccordion;
+                // Run once on init if we have a selection (sticky or default)
+                if (self.lastSelectedShelfId) syncAccordion();
+            }
 
             // Wire Events
             var closeBtn = div.querySelector('.close-btn');
             if (closeBtn) closeBtn.onclick = function () { div.remove(); };
+
+            var manageBtn = div.querySelector('.manage-btn');
+            if (manageBtn) manageBtn.onclick = function () {
+                div.remove();
+                self.openManageModal(zone.id);
+            };
 
             // CLICK DELEGATION FOR EDIT/DELETE
             div.addEventListener('click', function (e) {
@@ -652,6 +771,125 @@
             document.body.appendChild(div);
         };
 
+        CraftSpaceApp.prototype.openManageModal = function (zoneId) {
+            var self = this;
+            var zone = this.zones.find(function (z) { return z.id === zoneId; });
+            if (!zone) return;
+
+            var div = document.createElement('div');
+            div.className = "modal-backdrop flex fixed inset-0 bg-gray-900 bg-opacity-50 z-50 items-center justify-center p-4";
+
+            var contentHtml = '<div class="modal-content w-full max-w-lg mx-auto rounded-2xl p-6 shadow-xl max-h-[90vh] overflow-y-auto" style="background-color: #ffffff; border: 3px solid ' + zone.color + ';">';
+
+            // Header
+            contentHtml += '<div class="flex items-center justify-between mb-6">';
+            contentHtml += '<h2 class="text-xl font-bold text-gray-800">Manage Layout: ' + zone.title + '</h2>';
+            contentHtml += '<button class="done-btn px-4 py-1 bg-gray-200 hover:bg-gray-300 rounded font-bold text-sm">DONE</button>';
+            contentHtml += '</div>';
+
+            // Instructions
+            contentHtml += '<div class="mb-4 bg-orange-50 p-3 rounded text-sm text-orange-800 border border-orange-200">';
+            contentHtml += 'Add "Drawers", "Bins", or "Shelves" here. Use "Group: Name" (e.g. "Misc Bins: Bin 6") to group them automatically.';
+            contentHtml += '</div>';
+
+            // RENAME ZONE
+            contentHtml += '<form id="rename-zone-form" class="mb-6 p-4 bg-gray-50 rounded border flex gap-2 items-end">';
+            contentHtml += '<div class="flex-1">';
+            contentHtml += '<label class="block text-xs font-bold text-gray-500 uppercase mb-1">Zone Name</label>';
+            contentHtml += '<input type="text" id="rename-zone-input" class="w-full border p-2 rounded shadow-sm font-bold text-gray-800" value="' + zone.title + '" required>';
+            contentHtml += '</div>';
+            contentHtml += '<button type="submit" class="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600">SAVE NAME</button>';
+            contentHtml += '</form>';
+
+            // SECTION LIST
+            contentHtml += '<div class="text-xs font-bold text-gray-500 uppercase mb-2">Sections (Shelves/Bins)</div>';
+            contentHtml += '<ul class="divide-y divide-gray-200 mb-6">';
+            var sections = this.subZones[zoneId] || [];
+            if (sections.length === 0) contentHtml += '<li class="text-gray-400 italic">No sections defined.</li>';
+
+            sections.forEach(function (sec, idx) {
+                contentHtml += '<li class="py-3 flex items-center justify-between gap-2">';
+                contentHtml += '<span class="font-bold text-gray-700 flex-1">' + sec.name + '</span>';
+                contentHtml += '<button class="rename-sec-btn text-xs font-bold text-blue-500 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded border border-blue-100" data-idx="' + idx + '">RENAME</button>';
+                contentHtml += '<button class="del-sec-btn text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded border border-red-100" data-idx="' + idx + '">REMOVE</button>';
+                contentHtml += '</li>';
+            });
+            contentHtml += '</ul>';
+
+            // ADD NEW FORM
+            contentHtml += '<form id="add-sec-form" class="flex gap-2 border-t pt-4">';
+            contentHtml += '<input type="text" id="new-sec-name" class="flex-1 border p-2 rounded shadow-sm" placeholder="New Section Name (e.g. Misc Bins: Box 1)" required>';
+            contentHtml += '<button type="submit" class="px-4 py-2 bg-green-500 text-white font-bold rounded hover:bg-green-600">ADD</button>';
+            contentHtml += '</form>';
+
+            contentHtml += '</div>'; // End content
+
+            div.innerHTML = contentHtml;
+            document.body.appendChild(div);
+
+            // Wire Buttons (Delegation)
+            div.addEventListener('click', function (e) {
+                // DELETE
+                if (e.target.classList.contains('del-sec-btn')) {
+                    if (confirm("Remove this section? (Items inside will be hidden but not deleted)")) {
+                        var idx = parseInt(e.target.getAttribute('data-idx'));
+                        self.subZones[zoneId].splice(idx, 1);
+                        self.saveLayouts();
+                        div.remove();
+                        self.openManageModal(zoneId); // Refresh
+                    }
+                }
+                // RENAME
+                if (e.target.classList.contains('rename-sec-btn')) {
+                    var idx = parseInt(e.target.getAttribute('data-idx'));
+                    var currentName = self.subZones[zoneId][idx].name;
+                    var newName = prompt("Rename Section:", currentName);
+                    if (newName && newName.trim() !== "") {
+                        self.subZones[zoneId][idx].name = newName.trim();
+                        self.saveLayouts();
+                        div.remove();
+                        self.openManageModal(zoneId); // Refresh
+                    }
+                }
+                if (e.target.classList.contains('done-btn')) {
+                    div.remove();
+                    self.openModal(zoneId); // Go back to main
+                }
+            });
+
+            // Wire Rename Form
+            var renameForm = div.querySelector('#rename-zone-form');
+            if (renameForm) {
+                renameForm.onsubmit = function (e) {
+                    e.preventDefault();
+                    var input = document.getElementById('rename-zone-input');
+                    var newName = input.value.trim();
+                    if (newName) {
+                        zone.title = newName;
+                        window.dataSdk.update(zone);
+                        div.remove();
+                        self.openManageModal(zoneId);
+                    }
+                };
+            }
+
+            // Wire Add Form
+            var form = div.querySelector('#add-sec-form');
+            form.onsubmit = function (e) {
+                e.preventDefault();
+                var input = document.getElementById('new-sec-name');
+                var name = input.value.trim();
+                if (name) {
+                    var newId = zoneId + '-custom-' + Date.now();
+                    if (!self.subZones[zoneId]) self.subZones[zoneId] = [];
+                    self.subZones[zoneId].push({ id: newId, name: name });
+                    self.saveLayouts();
+                    div.remove();
+                    self.openManageModal(zoneId); // Refresh
+                }
+            };
+        };
+
         CraftSpaceApp.prototype.exportData = function () {
             var dataStr = JSON.stringify(window.dataSdk.data, null, 2);
             var blob = new Blob([dataStr], { type: "application/json" });
@@ -709,6 +947,138 @@
             URL.revokeObjectURL(url);
         };
 
+        CraftSpaceApp.prototype.openCommandCenterModal = function (zone) {
+            var self = this;
+            var existing = document.getElementById('zone-c-modal');
+            if (existing) existing.remove();
+
+            var div = document.createElement('div');
+            div.id = 'zone-c-modal';
+            div.className = "modal-backdrop flex fixed inset-0 bg-gray-900 bg-opacity-50 z-50 items-center justify-center p-4";
+
+            div.addEventListener('click', function (e) { if (e.target === div) div.remove(); });
+
+            var contentHtml = '<div class="modal-content w-full max-w-lg mx-auto rounded-2xl p-6 shadow-xl max-h-[90vh] overflow-y-auto" style="background-color: #ffffff; border: 3px solid ' + zone.color + ';">';
+
+            // Header
+            contentHtml += '<div class="flex items-center justify-between mb-6">';
+            contentHtml += '<h2 class="text-2xl font-bold" style="color: ' + zone.color + ';">Command Center</h2>';
+            contentHtml += '<button class="close-btn p-2 bg-gray-100 rounded hover:bg-gray-200">CLOSE X</button>';
+            contentHtml += '</div>';
+
+            // ---------------- DAILY TO-DO LIST ----------------
+            contentHtml += '<div class="mb-8 p-4 bg-white rounded shadow-sm border">';
+            contentHtml += '<h3 class="font-bold text-gray-700 bg-yellow-50 p-2 border-l-4 border-yellow-400 mb-4">Daily To-Do List</h3>';
+
+            // Render Tasks
+            var todos = this.data.filter(function (i) { return i.type === 'todo_item'; });
+            if (todos.length > 0) {
+                contentHtml += '<ul class="space-y-2 mb-4">';
+                todos.forEach(function (item) {
+                    var checkState = item.completed ? 'checked' : '';
+                    var textStyle = item.completed ? 'line-through text-gray-400' : 'text-gray-800 font-bold';
+                    contentHtml += '<li class="flex items-center gap-3 p-2 bg-gray-50 rounded border border-gray-100">';
+                    contentHtml += '<input type="checkbox" class="todo-check w-5 h-5 text-blue-600 rounded bg-gray-100 border-gray-300 focus:ring-blue-500 cursor-pointer" data-id="' + item.id + '" ' + checkState + '>';
+                    contentHtml += '<span class="flex-1 ' + textStyle + '">' + item.text + '</span>';
+                    contentHtml += '<button class="del-todo-btn text-red-500 hover:text-red-700 text-xs font-bold" data-id="' + item.id + '">X</button>';
+                    contentHtml += '</li>';
+                });
+                contentHtml += '</ul>';
+            } else {
+                contentHtml += '<p class="text-gray-400 italic mb-4">No tasks yet. Add one below!</p>';
+            }
+
+            // ADD TASK FORM
+            contentHtml += '<form id="add-todo-form" class="flex gap-2">';
+            contentHtml += '<input type="text" id="new-todo-input" placeholder="Add daily task..." class="flex-1 p-2 border rounded shadow-sm outline-none bg-gray-50 focus:bg-white transition-colors" autocomplete="off">';
+            contentHtml += '<button type="submit" class="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 shadow-sm transition-transform hover:scale-105">ADD</button>';
+            contentHtml += '</form>';
+            contentHtml += '</div>';
+
+            // ---------------- PROJECT STATUS ----------------
+            var status = this.projectStatus ? this.projectStatus.content : "No active project";
+            var hasActive = this.projectStatus && this.projectStatus.content && this.projectStatus.isActive;
+
+            contentHtml += '<div class="bg-blue-50 p-6 rounded-xl border border-blue-100 mb-6 text-center">';
+            contentHtml += '<h3 class="text-blue-800 font-bold uppercase text-xs tracking-wider mb-2">Current Project Focus</h3>';
+            contentHtml += '<p class="text-2xl font-extrabold text-blue-900 mb-4">' + status + '</p>';
+            if (hasActive) {
+                contentHtml += '<button id="complete-btn" class="px-4 py-2 bg-green-500 text-white font-bold rounded shadow hover:bg-green-600 transition-colors">MARK COMPLETE</button>';
+            }
+            contentHtml += '</div>';
+
+            // UPDATE STATUS FORM
+            contentHtml += '<form id="status-form" class="flex gap-2 mb-8">';
+            contentHtml += '<input type="text" id="status-input" placeholder="Set new project status..." class="flex-1 p-2 border rounded shadow-sm outline-none bg-gray-50 focus:bg-white transition-colors">';
+            contentHtml += '<button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-bold rounded hover:bg-yellow-600 shadow-sm transition-transform hover:scale-105">UPDATE</button>';
+            contentHtml += '</form>';
+
+            contentHtml += '</div>'; // End content
+            div.innerHTML = contentHtml;
+            document.body.appendChild(div);
+
+            // WIRE EVENTS
+            var closeBtn = div.querySelector('.close-btn');
+            if (closeBtn) closeBtn.onclick = function () { div.remove(); };
+
+            // Add Todo
+            var todoForm = div.querySelector('#add-todo-form');
+            if (todoForm) {
+                todoForm.onsubmit = function (e) {
+                    e.preventDefault();
+                    var input = document.getElementById('new-todo-input');
+                    var text = input.value.trim();
+                    if (text) {
+                        window.dataSdk.create({ type: 'todo_item', text: text, completed: false, createdAt: new Date().toISOString() });
+                        div.remove(); self.openCommandCenterModal(zone);
+                    }
+                };
+            }
+
+            // Checkbox & Delete Delegation
+            div.addEventListener('click', function (e) {
+                if (e.target.classList.contains('del-todo-btn')) {
+                    var id = e.target.getAttribute('data-id');
+                    window.dataSdk.delete(id);
+                    div.remove(); self.openCommandCenterModal(zone);
+                }
+                if (e.target.classList.contains('todo-check')) {
+                    var id = e.target.getAttribute('data-id');
+                    var item = self.data.find(function (i) { return i.id === id; });
+                    if (item) {
+                        item.completed = e.target.checked;
+                        window.dataSdk.update(item);
+                        div.remove(); self.openCommandCenterModal(zone);
+                    }
+                }
+            });
+
+            // Complete Project Button
+            var completeBtn = div.querySelector('#complete-btn');
+            if (completeBtn) {
+                completeBtn.onclick = function () {
+                    if (confirm("Mark '" + status + "' as complete?")) {
+                        window.dataSdk.create({ type: 'completed_project', content: status, completedAt: new Date().toISOString() });
+                        window.dataSdk.create({ type: 'project_status', content: "No active project", isActive: false });
+                        div.remove(); self.openCommandCenterModal(zone);
+                    }
+                };
+            }
+
+            // Update Status Form
+            var form = div.querySelector('#status-form');
+            if (form) {
+                form.onsubmit = function (e) {
+                    e.preventDefault();
+                    var input = document.getElementById('status-input');
+                    if (input.value.trim()) {
+                        window.dataSdk.create({ type: 'project_status', content: input.value.trim(), isActive: true });
+                        div.remove(); self.openCommandCenterModal(zone);
+                    }
+                };
+            }
+        };
+
         CraftSpaceApp.prototype.setupEventListeners = function () {
             var self = this;
             var searchInput = document.getElementById('global-search-input');
@@ -764,6 +1134,5 @@
         });
     </script>
 </body>
-
 
 </html>
