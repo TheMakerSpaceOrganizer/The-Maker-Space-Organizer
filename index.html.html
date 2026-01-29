@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Maker Space Organizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/_sdk/element_sdk.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+    <style>
+        body {
+            box-sizing: border-box;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .zone-btn {
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .zone-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .zone-btn:active {
+            transform: translateY(0);
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(45, 55, 72, 0.8);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+            width: 100%;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .flex {
+            display: flex !important;
+        }
+    </style>
+</head>
+
+<body class="h-full bg-gray-100">
+    <div id="app-container" class="h-full w-full overflow-auto" style="background-color: #f5f0eb;">
+        <!-- Header -->
+        <header class="sticky top-0 z-10 px-4 py-5" style="background-color: #2d3748;">
+            <div class="max-w-lg mx-auto flex items-center justify-center gap-3">
+                <svg width="36" height="36" viewbox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="18" cy="18" r="16" fill="#e9d5c9" stroke="#2d3748" stroke-width="2" />
+                    <path d="M12 18L16 22L24 14" stroke="#2d3748" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <h1 id="app-title" class="text-2xl font-extrabold tracking-tight" style="color: #f5f0eb;">The Maker
+                    Space
+                    Organizer</h1>
+            </div>
+            <div class="max-w-lg mx-auto flex justify-center gap-3 mt-3">
+                <button id="export-json-btn"
+                    class="text-xs font-bold px-3 py-1 rounded bg-gray-600 text-gray-200 hover:bg-gray-500 border border-gray-500 transition-colors">
+                    ⬇ JSON BACKUP
+                </button>
+                <button id="export-csv-btn"
+                    class="text-xs font-bold px-3 py-1 rounded bg-green-600 text-white hover:bg-green-500 border border-green-500 transition-colors">
+                    📊 EXPORT TO EXCEL
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="px-4 py-6 max-w-lg mx-auto">
+
+            <!-- Global Search -->
+            <div class="mb-6 sticky top-20 z-10">
+                <div class="relative">
+                    <input type="text" id="global-search-input" placeholder="Search for items..."
+                        class="w-full pl-10 pr-4 py-3 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style="background-color: #ffffff; border: 2px solid #e2e8f0; color: #2d3748;">
+                    <div id="search-results-container"
+                        class="hidden mt-2 bg-white rounded-xl shadow-lg border-2 border-gray-200 absolute w-full max-h-96 overflow-y-auto">
+                        <ul id="search-results-list" class="divide-y divide-gray-100"></ul>
+                        <div id="search-no-results" class="hidden p-4 text-center text-gray-500">No items found.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zone Grid -->
+            <section id="zone-grid" class="flex flex-col gap-4 mb-6">
+                <div class="p-4 text-center text-gray-500">Loading Zones...</div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MAIN SCRIPT (ES5 Compatible) -->
+    <script>
+        window.onerror = function (msg, url, line) {
+            console.error("Global Error: " + msg + " (Line " + line + ")");
+            return false;
+        };
+
+        // --- MOCK DATA SDK ---
+        function MockDataSdk() {
+            this.listeners = [];
+            this.data = this.loadData();
+            this.seedDefaultDataIfNeeded();
+            this.repairData(); // Ensure all items have IDs
+        }
+
+        MockDataSdk.prototype.loadData = function () {
+            try {
+                var stored = localStorage.getItem('craft_space_data_v3'); // Bump version for fresh seed
+                if (stored) return JSON.parse(stored);
+            } catch (e) { console.warn("Load failed", e); }
+            return [];
+        };
+
+        MockDataSdk.prototype.repairData = function () {
+            var changed = false;
+            this.data.forEach(function (item) {
+                if (!item.id) {
+                    item.id = Date.now().toString() + Math.random().toString().substr(2, 5);
+                    changed = true;
+                }
+            });
+            if (changed) this.saveData();
+        };
+
+        MockDataSdk.prototype.seedDefaultDataIfNeeded = function () {
+            if (this.data && this.data.length > 0) return;
+
+            this.data = [
+                // ZONES
+                { type: 'zone', id: 'zone-a', title: 'Metal Cabinet', color: '#c53030', letter: 'A' },
+                { type: 'zone', id: 'zone-b', title: 'Closet', color: '#dd6b20', letter: 'B' },
+                { type: 'zone', id: 'zone-c', title: 'Command Center', color: '#d69e2e', letter: 'C' },
+                { type: 'zone', id: 'zone-d', title: 'Cricut Cart', color: '#38a169', letter: 'D' },
+                { type: 'zone', id: 'zone-e', title: 'Marker Desk', color: '#3182ce', letter: 'E' },
+                { type: 'zone', id: 'zone-f', title: 'Printer Table', color: '#805ad5', letter: 'F' },
+                { type: 'zone', id: 'zone-g', title: 'Bookshelf', color: '#d53f8c', letter: 'G' },
+                { type: 'zone', id: 'zone-h', title: 'Pegboard', color: '#319795', letter: 'H' },
+
+                // ITEMS (Mapped to Sub-Zones)
+                { type: 'inventory', storageId: 'zone-a-shelf-1', text: 'White Paint' },
+                { type: 'inventory', storageId: 'zone-a-shelf-1', text: 'Brushes' },
+                // { type: 'inventory', storageId: 'zone-a-drawer-1', text: 'Sandpaper' }, // REMOVED (Invalid Shelf)
+
+                { type: 'project_status', content: 'Knitting Scarf', isActive: true },
+            ];
+            this.saveData();
+        };
+
+        MockDataSdk.prototype.saveData = function () {
+            try {
+                localStorage.setItem('craft_space_data_v3', JSON.stringify(this.data));
+            } catch (e) { console.warn("Save failed"); }
+            this.notifyListeners();
+        };
+
+        MockDataSdk.prototype.create = function (item) {
+            var newItem = JSON.parse(JSON.stringify(item));
+            newItem.id = Date.now().toString() + Math.random().toString().substr(2, 5);
+            this.data.push(newItem);
+            this.saveData();
+        };
+
+        MockDataSdk.prototype.update = function (item) {
+            var idx = this.data.findIndex(function (i) { return i.id === item.id; });
+            if (idx > -1) {
+                this.data[idx] = item;
+                this.saveData();
+            }
+        };
+
+        MockDataSdk.prototype.delete = function (itemId) {
+            this.data = this.data.filter(function (i) { return i.id !== itemId; });
+            this.saveData();
+        };
+
+        MockDataSdk.prototype.notifyListeners = function () {
+            var self = this;
+            this.listeners.forEach(function (l) { l.onDataChanged(self.data); });
+        };
+
+        MockDataSdk.prototype.subscribe = function (listener) {
+            this.listeners.push(listener);
+            var self = this;
+            setTimeout(function () { listener.onDataChanged(self.data); }, 0);
+        };
+
+        // --- CRAFT SPACE APP ---
+        function CraftSpaceApp() {
+            this.data = [];
+            this.zones = [];
+            this.inventoryItems = [];
+
+            // Define Sub-Zones (Shelves/Drawers)
+            this.subZones = {
+                'zone-a': [
+                    { id: 'zone-a-shelf-1', name: 'Shelf 1 (Top)' },
+                    { id: 'zone-a-shelf-2', name: 'Shelf 2' },
+                    { id: 'zone-a-shelf-3', name: 'Shelf 3' },
+                    { id: 'zone-a-shelf-4', name: 'Shelf 4 (Bottom)' }
+                ],
+                'zone-b': [
+                    { id: 'zone-b-hanging', name: 'Hanging Space' },
+                    { id: 'zone-b-top', name: 'Top Shelf' },
+                    { id: 'zone-b-cabinet', name: 'Cabinet' },
+                    { id: 'zone-b-cart-1', name: 'Rolling Cart 1' },
+                    { id: 'zone-b-cart-2', name: 'Rolling Cart 2' }
+                ],
+                'zone-d': [
+                    { id: 'zone-d-left-1', name: 'Left Drawer 1 (Top)' },
+                    { id: 'zone-d-left-2', name: 'Left Drawer 2 (Bottom)' },
+                    { id: 'zone-d-right-1', name: 'Right Drawer 1 (Top)' },
+                    { id: 'zone-d-right-2', name: 'Right Drawer 2 (Bottom)' }
+                ],
+                'zone-e': [
+                    // TOP CABINET
+                    { id: 'zone-e-top-left-1', name: 'Top Cabinet: Left Drawer 1' },
+                    { id: 'zone-e-top-left-2', name: 'Top Cabinet: Left Drawer 2' },
+                    { id: 'zone-e-top-right-1', name: 'Top Cabinet: Right Drawer 1' },
+                    { id: 'zone-e-top-right-2', name: 'Top Cabinet: Right Drawer 2' },
+
+                    // PLASTIC 4-DRAWER UNITS (x2)
+                    { id: 'zone-e-4d-1-1', name: 'Plastic 4-Drawer Unit 1: Drawer 1' },
+                    { id: 'zone-e-4d-1-2', name: 'Plastic 4-Drawer Unit 1: Drawer 2' },
+                    { id: 'zone-e-4d-1-3', name: 'Plastic 4-Drawer Unit 1: Drawer 3' },
+                    { id: 'zone-e-4d-1-4', name: 'Plastic 4-Drawer Unit 1: Drawer 4' },
+
+                    { id: 'zone-e-4d-2-1', name: 'Plastic 4-Drawer Unit 2: Drawer 1' },
+                    { id: 'zone-e-4d-2-2', name: 'Plastic 4-Drawer Unit 2: Drawer 2' },
+                    { id: 'zone-e-4d-2-3', name: 'Plastic 4-Drawer Unit 2: Drawer 3' },
+                    { id: 'zone-e-4d-2-4', name: 'Plastic 4-Drawer Unit 2: Drawer 4' },
+
+                    // PLASTIC 5-DRAWER UNITS (x2)
+                    { id: 'zone-e-5d-1-1', name: 'Plastic 5-Drawer Unit 1: Drawer 1' },
+                    { id: 'zone-e-5d-1-2', name: 'Plastic 5-Drawer Unit 1: Drawer 2' },
+                    { id: 'zone-e-5d-1-3', name: 'Plastic 5-Drawer Unit 1: Drawer 3' },
+                    { id: 'zone-e-5d-1-4', name: 'Plastic 5-Drawer Unit 1: Drawer 4' },
+                    { id: 'zone-e-5d-1-5', name: 'Plastic 5-Drawer Unit 1: Drawer 5' },
+
+                    { id: 'zone-e-5d-2-1', name: 'Plastic 5-Drawer Unit 2: Drawer 1' },
+                    { id: 'zone-e-5d-2-2', name: 'Plastic 5-Drawer Unit 2: Drawer 2' },
+                    { id: 'zone-e-5d-2-3', name: 'Plastic 5-Drawer Unit 2: Drawer 3' },
+                    { id: 'zone-e-5d-2-4', name: 'Plastic 5-Drawer Unit 2: Drawer 4' },
+                    { id: 'zone-e-5d-2-5', name: 'Plastic 5-Drawer Unit 2: Drawer 5' },
+
+                    // PLASTIC 6-DRAWER UNITS (x2)
+                    { id: 'zone-e-6d-1-1', name: 'Plastic 6-Drawer Unit 1: Drawer 1' },
+                    { id: 'zone-e-6d-1-2', name: 'Plastic 6-Drawer Unit 1: Drawer 2' },
+                    { id: 'zone-e-6d-1-3', name: 'Plastic 6-Drawer Unit 1: Drawer 3' },
+                    { id: 'zone-e-6d-1-4', name: 'Plastic 6-Drawer Unit 1: Drawer 4' },
+                    { id: 'zone-e-6d-1-5', name: 'Plastic 6-Drawer Unit 1: Drawer 5' },
+                    { id: 'zone-e-6d-1-6', name: 'Plastic 6-Drawer Unit 1: Drawer 6' },
+
+                    { id: 'zone-e-6d-2-1', name: 'Plastic 6-Drawer Unit 2: Drawer 1' },
+                    { id: 'zone-e-6d-2-2', name: 'Plastic 6-Drawer Unit 2: Drawer 2' },
+                    { id: 'zone-e-6d-2-3', name: 'Plastic 6-Drawer Unit 2: Drawer 3' },
+                    { id: 'zone-e-6d-2-4', name: 'Plastic 6-Drawer Unit 2: Drawer 4' },
+                    { id: 'zone-e-6d-2-5', name: 'Plastic 6-Drawer Unit 2: Drawer 5' },
+                    { id: 'zone-e-6d-2-6', name: 'Plastic 6-Drawer Unit 2: Drawer 6' },
+
+                    // BOTTOM SHELVES
+                    { id: 'zone-e-bot-1-1', name: 'Bottom Shelf 1: Bin 1' },
+                    { id: 'zone-e-bot-1-2', name: 'Bottom Shelf 1: Bin 2' },
+                    { id: 'zone-e-bot-2-1', name: 'Bottom Shelf 2: Bin 1' },
+                    { id: 'zone-e-bot-2-2', name: 'Bottom Shelf 2: Bin 2' }
+                ],
+                'zone-f': [
+                    { id: 'zone-f-bin-1', name: 'Under Table Bin 1' },
+                    { id: 'zone-f-bin-2', name: 'Under Table Bin 2' }
+                ],
+                'zone-g': [
+                    { id: 'zone-g-top-bin', name: 'Plastic Bin (Top)' },
+                    { id: 'zone-g-cube-1', name: 'Cube 1' },
+                    { id: 'zone-g-cube-2', name: 'Cube 2' },
+                    { id: 'zone-g-cube-3', name: 'Cube 3' },
+                    { id: 'zone-g-cube-4', name: 'Cube 4' },
+                    { id: 'zone-g-cube-5', name: 'Cube 5 (Center)' },
+                    { id: 'zone-g-cube-6', name: 'Cube 6' },
+                    { id: 'zone-g-cube-7', name: 'Cube 7' },
+                    { id: 'zone-g-cube-8', name: 'Cube 8' },
+                    { id: 'zone-g-cube-9', name: 'Cube 9' }
+                ],
+                'zone-h': [
+                    { id: 'zone-h-basket-1', name: 'Basket 1' },
+                    { id: 'zone-h-basket-2', name: 'Basket 2' },
+                    { id: 'zone-h-basket-3', name: 'Basket 3' },
+                    { id: 'zone-h-basket-4', name: 'Basket 4' },
+                    { id: 'zone-h-hook-1', name: 'Hook 1' },
+                    { id: 'zone-h-hook-2', name: 'Hook 2' },
+                    { id: 'zone-h-hook-3', name: 'Hook 3' },
+                    { id: 'zone-h-hook-4', name: 'Hook 4' },
+                    { id: 'zone-h-hook-5', name: 'Hook 5' }
+                ],
+                // Add more as needed, others get default
+            };
+
+            this.setupEventListeners();
+            if (window.dataSdk) window.dataSdk.subscribe(this);
+        }
+
+        CraftSpaceApp.prototype.onDataChanged = function (newData) {
+            this.data = newData || [];
+            this.zones = this.data.filter(function (i) { return i.type === 'zone'; });
+            this.inventoryItems = this.data.filter(function (i) { return i.type === 'inventory'; });
+
+            // Fix: Find the LATEST project status (Mock SDK appends, so take the last one)
+            var stats = this.data.filter(function (i) { return i.type === 'project_status'; });
+            this.projectStatus = stats.length > 0 ? stats[stats.length - 1] : null; // Take last
+
+            this.renderZones();
+        };
+
+        CraftSpaceApp.prototype.deleteInventoryItem = function (itemId) {
+            if (confirm("Are you sure you want to delete this item?")) {
+                window.dataSdk.delete(itemId);
+            }
+        };
+
+        CraftSpaceApp.prototype.editInventoryItem = function (item) {
+            var newText = prompt("Edit Item Name:", item.text);
+            if (newText && newText.trim() !== "") {
+                item.text = newText.trim();
+                window.dataSdk.update(item);
+            }
+        };
+
+        CraftSpaceApp.prototype.renderZones = function () {
+            var grid = document.getElementById('zone-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            var self = this;
+            this.zones.forEach(function (zone) {
+                var btn = document.createElement('button');
+                btn.className = "zone-btn w-full p-5 rounded-2xl flex items-center gap-4 text-left transition-all hover:scale-[1.02] shadow-sm";
+                btn.style.backgroundColor = "#ffffff";
+                btn.style.border = "3px solid #2d3748";
+
+                var html = '<div class="w-16 h-16 rounded-xl flex items-center justify-center" style="background-color: ' + zone.color + ';">';
+                html += '<span class="text-white font-bold text-xl">' + (zone.letter || '') + '</span></div>';
+                html += '<div class="flex-1">';
+                html += '<span class="block text-sm font-bold" style="color: ' + zone.color + ';">ZONE ' + zone.letter + '</span>';
+                html += '<span class="block text-xl font-bold" style="color: #2d3748;">' + zone.title + '</span></div>';
+
+                btn.innerHTML = html;
+                btn.onclick = function () { self.openModal(zone.id); };
+                grid.appendChild(btn);
+            });
+        };
+
+        CraftSpaceApp.prototype.addInventoryItem = function (storageId, text) {
+            var newItem = {
+                type: 'inventory',
+                storageId: storageId,
+                text: text,
+                createdAt: new Date().toISOString()
+            };
+            window.dataSdk.create(newItem);
+        };
+
+        CraftSpaceApp.prototype.openModal = function (zoneId) {
+            var self = this;
+            var zone = this.zones.find(function (z) { return z.id === zoneId; });
+            if (!zone) return;
+
+            // SPECIAL CASE: Command Center (Zone C)
+            if (zone.id === 'zone-c') {
+                this.openCommandCenterModal(zone);
+                return;
+            }
+
+            var existing = document.getElementById(zoneId + '-modal');
+            if (existing) existing.remove();
+
+            var div = document.createElement('div');
+            div.id = zoneId + '-modal';
+            div.className = "modal-backdrop flex fixed inset-0 bg-gray-900 bg-opacity-50 z-50 items-center justify-center p-4";
+
+            div.addEventListener('click', function (e) {
+                if (e.target === div) div.remove();
+            });
+
+            var contentHtml = '<div class="modal-content w-full max-w-lg mx-auto rounded-2xl p-6 shadow-xl max-h-[90vh] overflow-y-auto" style="background-color: #ffffff; border: 3px solid ' + zone.color + ';">';
+
+            // Header
+            contentHtml += '<div class="flex items-center justify-between mb-6">';
+            contentHtml += '<h2 class="text-2xl font-bold" style="color: ' + zone.color + ';">' + zone.title + '</h2>';
+            contentHtml += '<button class="close-btn p-2 bg-gray-100 rounded hover:bg-gray-200">CLOSE X</button>';
+            contentHtml += '</div>';
+
+            // ADD ITEM FORM (Multi-Shelf)
+            var shelves = this.subZones[zone.id] || [{ id: zone.id, name: 'General Storage' }];
+
+            contentHtml += '<form id="add-item-form-' + zone.id + '" class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">';
+            contentHtml += '<label class="block text-xs font-bold text-gray-500 uppercase mb-1">Add New Item</label>';
+            contentHtml += '<div class="flex flex-col gap-2">';
+
+            // Shelf Selector
+            contentHtml += '<select id="new-item-shelf-' + zone.id + '" class="p-2 border rounded shadow-sm bg-white outline-none">';
+            shelves.forEach(function (shelf) {
+                contentHtml += '<option value="' + shelf.id + '">' + shelf.name + '</option>';
+            });
+            contentHtml += '</select>';
+
+            // Text Input & Button
+            contentHtml += '<div class="flex gap-2">';
+            contentHtml += '<input type="text" id="new-item-input-' + zone.id + '" placeholder="Item name..." class="flex-1 p-2 border rounded shadow-sm outline-none" autocomplete="off">';
+            contentHtml += '<button type="submit" class="px-4 py-2 text-white rounded font-bold" style="background-color: ' + zone.color + ';">ADD</button>';
+            contentHtml += '</div></div>';
+            contentHtml += '</form>';
+
+            // CONTENT AREA (Grouped by Shelf)
+            contentHtml += '<div class="space-y-6">';
+
+            var prevPrefix = "";
+
+            shelves.forEach(function (shelf) {
+                // Determine prefix (everything before ':') to group visually
+                // e.g. "Plastic 4-Drawer Unit 1"
+                var prefix = shelf.name.split(':')[0] || shelf.name;
+
+                // Add spacer if new group (and not first)
+                if (prevPrefix && prefix !== prevPrefix) {
+                    contentHtml += '<div class="border-t-4 border-gray-100 my-6"></div>';
+                }
+                prevPrefix = prefix;
+
+                // Filter items for this specific shelf/sub-zone
+                var items = self.inventoryItems.filter(function (i) { return i.storageId === shelf.id; });
+
+                contentHtml += '<div>';
+                contentHtml += '<h3 class="font-bold text-gray-700 text-sm border-b pb-1 mb-2">' + shelf.name + '</h3>';
+
+                if (items.length > 0) {
+                    contentHtml += '<ul class="divide-y divide-gray-100">';
+                    items.forEach(function (item) {
+                        contentHtml += '<li class="py-2 text-md flex items-center justify-between group">';
+                        contentHtml += '<span class="flex-1">' + item.text + '</span>';
+                        contentHtml += '<div class="flex gap-2 ml-4">'; // REMOVED OPACITY CLASSES
+                        contentHtml += '<button class="edit-btn text-blue-500 hover:text-blue-700 font-bold text-xs px-2 py-1 bg-blue-50 rounded" data-id="' + item.id + '">EDIT</button>';
+                        contentHtml += '<button class="delete-btn text-red-500 hover:text-red-700 font-bold text-xs px-2 py-1 bg-red-50 rounded" data-id="' + item.id + '">DEL</button>';
+                        contentHtml += '</div>';
+                        contentHtml += '</li>';
+                    });
+                    contentHtml += '</ul>';
+                } else {
+                    contentHtml += '<p class="text-gray-400 text-sm italic">Empty</p>';
+                }
+                contentHtml += '</div>';
+            });
+
+            contentHtml += '</div>'; // End content space
+            contentHtml += '</div>'; // End modal-content
+
+            div.innerHTML = contentHtml;
+
+            // Wire Events
+            var closeBtn = div.querySelector('.close-btn');
+            if (closeBtn) closeBtn.onclick = function () { div.remove(); };
+
+            // CLICK DELEGATION FOR EDIT/DELETE
+            div.addEventListener('click', function (e) {
+                // Delete Button
+                var delBtn = e.target.closest('.delete-btn');
+                if (delBtn) {
+                    var id = delBtn.getAttribute('data-id');
+                    self.deleteInventoryItem(id);
+                    setTimeout(function () { self.openModal(zone.id); }, 50);
+                    return; // Stop processing
+                }
+
+                // Edit Button
+                var editBtn = e.target.closest('.edit-btn');
+                if (editBtn) {
+                    var id = editBtn.getAttribute('data-id');
+                    var item = self.inventoryItems.find(function (i) { return i.id === id; });
+                    if (item) {
+                        self.editInventoryItem(item);
+                        setTimeout(function () { self.openModal(zone.id); }, 50);
+                    }
+                }
+            });
+
+            var form = div.querySelector('#add-item-form-' + zone.id);
+            if (form) {
+                form.onsubmit = function (e) {
+                    e.preventDefault();
+                    var input = document.getElementById('new-item-input-' + zone.id);
+                    var select = document.getElementById('new-item-shelf-' + zone.id);
+                    var text = input.value.trim();
+                    var storageId = select.value;
+
+                    if (text && storageId) {
+                        self.addInventoryItem(storageId, text);
+                        setTimeout(function () { self.openModal(zone.id); }, 50);
+                    }
+                };
+            }
+
+            document.body.appendChild(div);
+            // Focus
+            var input = document.getElementById('new-item-input-' + zone.id);
+            if (input) input.focus();
+        };
+
+        // COMMAND CENTER MODAL
+        CraftSpaceApp.prototype.openCommandCenterModal = function (zone) {
+            var self = this;
+            var existing = document.getElementById('zone-c-modal');
+            if (existing) existing.remove();
+
+            var div = document.createElement('div');
+            div.id = 'zone-c-modal';
+            div.className = "modal-backdrop flex fixed inset-0 bg-gray-900 bg-opacity-50 z-50 items-center justify-center p-4";
+
+            div.addEventListener('click', function (e) { if (e.target === div) div.remove(); });
+
+            var contentHtml = '<div class="modal-content w-full max-w-lg mx-auto rounded-2xl p-6 shadow-xl max-h-[90vh] overflow-y-auto" style="background-color: #ffffff; border: 3px solid ' + zone.color + ';">';
+
+            contentHtml += '<div class="flex items-center justify-between mb-6">';
+            contentHtml += '<h2 class="text-2xl font-bold" style="color: ' + zone.color + ';">Command Center</h2>';
+            contentHtml += '<button class="close-btn p-2 bg-gray-100 rounded hover:bg-gray-200">CLOSE X</button>';
+            contentHtml += '</div>';
+
+            // PROJECT STATUS
+            var status = this.projectStatus ? this.projectStatus.content : "No active project";
+            var hasActive = this.projectStatus && this.projectStatus.content;
+
+            contentHtml += '<div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200 mb-6 text-center">';
+            contentHtml += '<h3 class="text-yellow-800 font-bold uppercase text-xs tracking-wider mb-2">Current Project Status</h3>';
+            contentHtml += '<p class="text-2xl font-extrabold text-gray-800 mb-4">' + status + '</p>';
+
+            if (hasActive) {
+                contentHtml += '<button id="complete-btn" class="px-4 py-2 bg-green-500 text-white font-bold rounded shadow hover:bg-green-600 transition-colors">MARK COMPLETE</button>';
+            }
+            contentHtml += '</div>';
+
+            // UPDATE FORM
+            contentHtml += '<form id="status-form" class="flex gap-2 mb-8">';
+            contentHtml += '<input type="text" id="status-input" placeholder="Set new status..." class="flex-1 p-2 border rounded shadow-sm outline-none">';
+            contentHtml += '<button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-bold rounded">UPDATE</button>';
+            contentHtml += '</form>';
+
+            // HISTORY LOG
+            contentHtml += '<div>';
+            contentHtml += '<h3 class="font-bold text-gray-700 border-b pb-2 mb-3">Completed Projects</h3>';
+
+            var history = this.data.filter(function (i) { return i.type === 'completed_project'; });
+            // Sort localized
+            history.sort(function (a, b) {
+                return (b.completedAt || "").localeCompare(a.completedAt || "");
+            });
+
+            if (history.length > 0) {
+                contentHtml += '<ul class="space-y-2">';
+                history.forEach(function (h) {
+                    var dateStr = h.completedAt ? new Date(h.completedAt).toLocaleDateString() : "";
+                    contentHtml += '<li class="p-3 bg-gray-50 rounded flex justify-between items-center">';
+                    contentHtml += '<span class="text-gray-700 line-through">' + h.content + '</span>';
+                    contentHtml += '<span class="text-xs text-gray-400">' + dateStr + '</span>';
+                    contentHtml += '</li>';
+                });
+                contentHtml += '</ul>';
+            } else {
+                contentHtml += '<p class="text-gray-400 italic text-sm">No completed projects yet.</p>';
+            }
+            contentHtml += '</div>';
+
+            contentHtml += '</div>';
+            div.innerHTML = contentHtml;
+
+            // EVENTS
+            var closeBtn = div.querySelector('.close-btn');
+            if (closeBtn) closeBtn.onclick = function () { div.remove(); };
+
+            // Complete Button
+            var completeBtn = div.querySelector('#complete-btn');
+            if (completeBtn) {
+                completeBtn.onclick = function () {
+                    if (confirm("Mark '" + status + "' as complete?")) {
+                        // 1. Create Log Entry
+                        var log = {
+                            type: 'completed_project',
+                            content: status,
+                            completedAt: new Date().toISOString()
+                        };
+                        window.dataSdk.create(log);
+
+                        // 2. Clear Status
+                        // In this mock, we just overwrite the single project_status item
+                        // Ideally we update. 
+                        var emptyStatus = { type: 'project_status', content: "", isActive: false };
+                        window.dataSdk.create(emptyStatus);
+
+                        setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
+                    }
+                };
+            }
+
+            // Update Form
+            var form = div.querySelector('#status-form');
+            if (form) {
+                form.onsubmit = function (e) {
+                    e.preventDefault();
+                    var input = document.getElementById('status-input');
+                    if (input.value.trim()) {
+                        var newStatus = { type: 'project_status', content: input.value.trim(), isActive: true };
+                        window.dataSdk.create(newStatus);
+                        setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
+                    }
+                };
+            }
+
+            document.body.appendChild(div);
+        };
+
+        CraftSpaceApp.prototype.exportData = function () {
+            var dataStr = JSON.stringify(window.dataSdk.data, null, 2);
+            var blob = new Blob([dataStr], { type: "application/json" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = "maker_space_organizer_backup_" + new Date().toISOString().slice(0, 10) + ".json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        CraftSpaceApp.prototype.exportToCSV = function () {
+            var csvContent = "\uFEFF"; // UTF-8 BOM for Excel
+            csvContent += "Zone,Storage Location,Item Name\n";
+
+            var self = this;
+            this.inventoryItems.forEach(function (item) {
+                // Find location details
+                var zoneTitle = "Unknown Zone";
+                var shelfName = "Unknown Location";
+
+                // Parse zone ID from storage ID (e.g. zone-a-shelf-1 -> zone-a)
+                var parts = item.storageId.split('-');
+                if (parts.length >= 2) {
+                    var zoneId = parts[0] + '-' + parts[1];
+                    var zone = self.zones.find(function (z) { return z.id === zoneId; });
+                    if (zone) zoneTitle = zone.title;
+
+                    // Find specific shelf name
+                    var subZoneList = self.subZones[zoneId];
+                    if (subZoneList) {
+                        var shelf = subZoneList.find(function (s) { return s.id === item.storageId; });
+                        if (shelf) shelfName = shelf.name;
+                    }
+                }
+
+                // Escape quotes for CSV
+                var safeText = '"' + item.text.replace(/"/g, '""') + '"';
+                var safeZone = '"' + zoneTitle.replace(/"/g, '""') + '"';
+                var safeShelf = '"' + shelfName.replace(/"/g, '""') + '"';
+
+                csvContent += safeZone + "," + safeShelf + "," + safeText + "\n";
+            });
+
+            var blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = "maker_space_organizer_inventory_" + new Date().toISOString().slice(0, 10) + ".csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        CraftSpaceApp.prototype.setupEventListeners = function () {
+            var self = this;
+            var searchInput = document.getElementById('global-search-input');
+            var resultsBox = document.getElementById('search-results-container');
+            var resultsList = document.getElementById('search-results-list');
+
+            var jsonBtn = document.getElementById('export-json-btn');
+            if (jsonBtn) {
+                jsonBtn.addEventListener('click', function () { self.exportData(); });
+            }
+
+            var csvBtn = document.getElementById('export-csv-btn');
+            if (csvBtn) {
+                csvBtn.addEventListener('click', function () { self.exportToCSV(); });
+            }
+
+            // Legacy ID check for safety (though replaced in HTML)
+            var oldBtn = document.getElementById('export-btn');
+            if (oldBtn) oldBtn.addEventListener('click', function () { self.exportData(); });
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function (e) {
+                    var query = e.target.value.toLowerCase();
+                    if (query.length === 0) { resultsBox.classList.add('hidden'); return; }
+                    var matches = self.inventoryItems.filter(function (i) { return i.text.toLowerCase().indexOf(query) > -1; });
+                    resultsList.innerHTML = '';
+                    if (matches.length > 0) {
+                        resultsBox.classList.remove('hidden');
+                        matches.forEach(function (item) {
+                            var li = document.createElement('li');
+                            li.className = "p-3 hover:bg-gray-50 cursor-pointer border-b";
+                            li.innerHTML = '<div class="font-bold">' + item.text + '</div><div class="text-xs text-gray-500">' + item.storageId + '</div>';
+                            li.onclick = function () {
+                                // Parse storageId to find zone
+                                var parts = item.storageId.split('-');
+                                if (parts.length >= 2) {
+                                    var zoneId = parts[0] + '-' + parts[1]; // zone-a
+                                    self.openModal(zoneId);
+                                }
+                            };
+                            resultsList.appendChild(li);
+                        });
+                    } else {
+                        resultsBox.classList.remove('hidden'); resultsList.innerHTML = '<li class="p-3">No results</li>';
+                    }
+                });
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', function () {
+            window.dataSdk = new MockDataSdk();
+            window.app = new CraftSpaceApp();
+        });
+    </script>
+</body>
+
+</html>
