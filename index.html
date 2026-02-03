@@ -230,6 +230,9 @@
                         { id: 'zone-a-shelf-3', name: 'Shelf 3' },
                         { id: 'zone-a-shelf-4', name: 'Shelf 4 (Bottom)' }
                     ],
+                    'zone-c': [
+                        { id: 'zone-c-tabletop', name: 'Table Top' }
+                    ],
                     'zone-b': [
                         { id: 'zone-b-hanging', name: 'Hanging Space' },
                         { id: 'zone-b-top', name: 'Top Shelf' },
@@ -674,9 +677,40 @@
 
             var contentHtml = '<div class="modal-content w-full max-w-lg mx-auto rounded-2xl p-6 shadow-xl max-h-[90vh] overflow-y-auto" style="background-color: #ffffff; border: 3px solid ' + zone.color + ';">';
 
-            contentHtml += '<div class="flex items-center justify-between mb-6">';
-            contentHtml += '<h2 class="text-2xl font-bold" style="color: ' + zone.color + ';">Command Center</h2>';
+            // Header
+            contentHtml += '<div class="flex items-center justify-between mb-6 gap-2">';
+            contentHtml += '<h2 class="text-2xl font-bold flex-1" style="color: ' + zone.color + ';">Command Center</h2>';
+            contentHtml += '<button class="manage-btn text-xs font-bold px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700">⚙ EDIT LAYOUT</button>';
             contentHtml += '<button class="close-btn p-2 bg-gray-100 rounded hover:bg-gray-200">CLOSE X</button>';
+            contentHtml += '</div>';
+
+            // ---------------- DAILY TO-DO LIST ----------------
+            contentHtml += '<div class="mb-8 p-4 bg-white rounded shadow-sm border">';
+            contentHtml += '<h3 class="font-bold text-gray-700 bg-yellow-50 p-2 border-l-4 border-yellow-400 mb-4">Daily To-Do List</h3>';
+
+            // Render Tasks
+            var todos = this.data.filter(function (i) { return i.type === 'todo_item'; });
+            if (todos.length > 0) {
+                contentHtml += '<ul class="space-y-2 mb-4">';
+                todos.forEach(function (item) {
+                    var checkState = item.completed ? 'checked' : '';
+                    var textStyle = item.completed ? 'line-through text-gray-400' : 'text-gray-800 font-bold';
+                    contentHtml += '<li class="flex items-center gap-3 p-2 bg-gray-50 rounded border border-gray-100">';
+                    contentHtml += '<input type="checkbox" class="todo-check w-5 h-5 text-blue-600 rounded bg-gray-100 border-gray-300 focus:ring-blue-500 cursor-pointer" data-id="' + item.id + '" ' + checkState + '>';
+                    contentHtml += '<span class="flex-1 ' + textStyle + '">' + item.text + '</span>';
+                    contentHtml += '<button class="del-todo-btn text-red-500 hover:text-red-700 text-xs font-bold" data-id="' + item.id + '">X</button>';
+                    contentHtml += '</li>';
+                });
+                contentHtml += '</ul>';
+            } else {
+                contentHtml += '<p class="text-gray-400 italic mb-4">No tasks yet. Add one below!</p>';
+            }
+
+            // ADD TASK FORM
+            contentHtml += '<form id="add-todo-form" class="flex gap-2">';
+            contentHtml += '<input type="text" id="new-todo-input" placeholder="Add daily task..." class="flex-1 p-2 border rounded shadow-sm outline-none bg-gray-50 focus:bg-white transition-colors" autocomplete="off">';
+            contentHtml += '<button type="submit" class="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 shadow-sm transition-transform hover:scale-105">ADD</button>';
+            contentHtml += '</form>';
             contentHtml += '</div>';
 
             // PROJECT STATUS
@@ -699,8 +733,11 @@
             contentHtml += '</form>';
 
             // HISTORY LOG
-            contentHtml += '<div>';
-            contentHtml += '<h3 class="font-bold text-gray-700 border-b pb-2 mb-3">Completed Projects</h3>';
+            contentHtml += '<div class="mb-8">';
+            contentHtml += '<div class="flex items-center justify-between border-b pb-2 mb-3">';
+            contentHtml += '<h3 class="font-bold text-gray-700">Completed Projects</h3>';
+            contentHtml += '<button id="clear-history-btn" class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors">CLEAR ALL</button>';
+            contentHtml += '</div>';
 
             var history = this.data.filter(function (i) { return i.type === 'completed_project'; });
             // Sort localized
@@ -723,12 +760,131 @@
             }
             contentHtml += '</div>';
 
+            // --- STORAGE SECTION (New) ---
+            contentHtml += '<div class="border-t-4 border-gray-100 pt-6">';
+            contentHtml += '<h3 class="font-bold text-lg text-gray-800 mb-4">Storage & Inventory</h3>';
+
+            var shelves = this.subZones[zone.id] || [{ id: 'zone-c-tabletop', name: 'Table Top' }];
+
+            // ADD ITEM FORM
+            contentHtml += '<form id="add-item-form-' + zone.id + '" class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">';
+            contentHtml += '<label class="block text-xs font-bold text-gray-500 uppercase mb-1">Add New Item</label>';
+            contentHtml += '<div class="flex flex-col gap-2">';
+            contentHtml += '<select id="new-item-shelf-' + zone.id + '" class="p-2 border rounded shadow-sm bg-white outline-none">';
+            shelves.forEach(function (shelf) {
+                var isSelected = (self.lastSelectedShelfId === shelf.id) ? 'selected' : '';
+                contentHtml += '<option value="' + shelf.id + '" ' + isSelected + '>' + shelf.name + '</option>';
+            });
+            contentHtml += '</select>';
+            contentHtml += '<div class="flex gap-2">';
+            contentHtml += '<input type="text" id="new-item-input-' + zone.id + '" placeholder="Item name..." class="flex-1 p-2 border rounded shadow-sm outline-none" autocomplete="off">';
+            contentHtml += '<button type="submit" class="px-4 py-2 text-white rounded font-bold" style="background-color: ' + zone.color + ';">ADD</button>';
+            contentHtml += '</div></div></form>';
+
+            // INVENTORY LIST
+            contentHtml += '<div class="space-y-6">';
+            var groups = {};
+            shelves.forEach(function (s) {
+                var key = s.name.split(':')[0] || s.name;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(s);
+            });
+
+            var startOpen = false;
+            Object.keys(groups).forEach(function (groupName) {
+                var groupShelves = groups[groupName];
+                contentHtml += '<details class="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden group" ' + (startOpen ? 'open' : '') + '>';
+                contentHtml += '<summary class="cursor-pointer p-3 font-bold bg-gray-50 hover:bg-gray-100 flex items-center justify-between select-none">';
+                contentHtml += '<span>' + groupName + '</span>';
+                contentHtml += '<span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>';
+                contentHtml += '</summary>';
+                contentHtml += '<div class="p-4 space-y-6 bg-white">';
+
+                groupShelves.forEach(function (shelf) {
+                    var items = self.inventoryItems.filter(function (i) { return i.storageId === shelf.id; });
+                    var subHeader = shelf.name;
+                    if (subHeader.indexOf(':') > -1) subHeader = subHeader.split(':')[1].trim();
+
+                    if (groupShelves.length > 1 || subHeader !== groupName) {
+                        contentHtml += '<h3 class="font-bold text-gray-700 text-sm border-b pb-1 mb-2">' + subHeader + '</h3>';
+                    }
+
+                    if (items.length > 0) {
+                        contentHtml += '<ul class="divide-y divide-gray-100 mb-4">';
+                        items.forEach(function (item) {
+                            contentHtml += '<li class="py-2 text-md flex items-center justify-between group">';
+                            contentHtml += '<span class="flex-1">' + item.text + '</span>';
+                            contentHtml += '<div class="flex gap-2 ml-4">';
+                            contentHtml += '<button class="edit-btn text-blue-500 hover:text-blue-700 font-bold text-xs px-2 py-1 bg-blue-50 rounded" data-id="' + item.id + '">EDIT</button>';
+                            contentHtml += '<button class="delete-btn text-red-500 hover:text-red-700 font-bold text-xs px-2 py-1 bg-red-50 rounded" data-id="' + item.id + '">DEL</button>';
+                            contentHtml += '</div></li>';
+                        });
+                        contentHtml += '</ul>';
+                    } else {
+                        contentHtml += '<div class="text-gray-400 text-sm italic mb-4">Empty</div>';
+                    }
+                });
+                contentHtml += '</div></details>';
+            });
+            contentHtml += '</div>'; // End Inventory List
+            contentHtml += '</div>'; // End Storage Section
+
             contentHtml += '</div>';
             div.innerHTML = contentHtml;
 
             // EVENTS
             var closeBtn = div.querySelector('.close-btn');
             if (closeBtn) closeBtn.onclick = function () { div.remove(); };
+
+            // Clear History
+            var clearHistBtn = div.querySelector('#clear-history-btn');
+            if (clearHistBtn) {
+                clearHistBtn.onclick = function () {
+                    if (confirm("Are you sure you want to clear the history?")) {
+                        self.data.filter(function (i) { return i.type === 'completed_project'; })
+                            .forEach(function (item) { window.dataSdk.delete(item.id); });
+                        setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
+                    }
+                };
+            }
+
+            // Add Todo
+            var todoForm = div.querySelector('#add-todo-form');
+            if (todoForm) {
+                todoForm.onsubmit = function (e) {
+                    e.preventDefault();
+                    var input = document.getElementById('new-todo-input');
+                    var text = input.value.trim();
+                    if (text) {
+                        window.dataSdk.create({ type: 'todo_item', text: text, completed: false, createdAt: new Date().toISOString() });
+                        setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
+                    }
+                };
+            }
+
+            // Checkbox & Delete Delegation (Todo)
+            div.addEventListener('click', function (e) {
+                if (e.target.classList.contains('del-todo-btn')) {
+                    var id = e.target.getAttribute('data-id');
+                    window.dataSdk.delete(id);
+                    setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
+                }
+                if (e.target.classList.contains('todo-check')) {
+                    var id = e.target.getAttribute('data-id');
+                    var item = self.data.find(function (i) { return i.id === id; });
+                    if (item) {
+                        item.completed = e.target.checked;
+                        window.dataSdk.update(item);
+                        setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
+                    }
+                }
+            });
+
+            var manageBtn = div.querySelector('.manage-btn');
+            if (manageBtn) manageBtn.onclick = function () {
+                div.remove();
+                self.openManageModal(zone.id);
+            };
 
             // Complete Button
             var completeBtn = div.querySelector('#complete-btn');
@@ -744,8 +900,6 @@
                         window.dataSdk.create(log);
 
                         // 2. Clear Status
-                        // In this mock, we just overwrite the single project_status item
-                        // Ideally we update. 
                         var emptyStatus = { type: 'project_status', content: "", isActive: false };
                         window.dataSdk.create(emptyStatus);
 
@@ -768,7 +922,77 @@
                 };
             }
 
+            // --- STORAGE EVENTS ---
+
+            // Auto-Accordion Logic
+            var select = document.getElementById('new-item-shelf-' + zone.id);
+            var detailsList = div.querySelectorAll('details');
+
+            function syncAccordion() {
+                var selectedId = select.value;
+                var shelf = shelves.find(function (s) { return s.id === selectedId; });
+                if (!shelf) return;
+                var prefix = shelf.name.split(':')[0] || shelf.name;
+
+                detailsList.forEach(function (dt) {
+                    var summary = dt.querySelector('summary span').innerText;
+                    if (summary === prefix) {
+                        dt.open = true;
+                    } else {
+                        dt.open = false;
+                    }
+                });
+            }
+
+            if (select) {
+                select.onchange = syncAccordion;
+                if (self.lastSelectedShelfId) syncAccordion();
+            }
+
+            // CLICK DELEGATION FOR EDIT/DELETE
+            div.addEventListener('click', function (e) {
+                // Delete Button
+                var delBtn = e.target.closest('.delete-btn');
+                if (delBtn) {
+                    var id = delBtn.getAttribute('data-id');
+                    self.deleteInventoryItem(id);
+                    setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
+                    return; // Stop processing
+                }
+
+                // Edit Button
+                var editBtn = e.target.closest('.edit-btn');
+                if (editBtn) {
+                    var id = editBtn.getAttribute('data-id');
+                    var item = self.inventoryItems.find(function (i) { return i.id === id; });
+                    if (item) {
+                        self.editInventoryItem(item);
+                        setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
+                    }
+                }
+            });
+
+            var addItemForm = div.querySelector('#add-item-form-' + zone.id);
+            if (addItemForm) {
+                addItemForm.onsubmit = function (e) {
+                    e.preventDefault();
+                    var input = document.getElementById('new-item-input-' + zone.id);
+                    var select = document.getElementById('new-item-shelf-' + zone.id);
+                    var text = input.value.trim();
+                    var storageId = select.value;
+
+                    if (text && storageId) {
+                        self.lastSelectedShelfId = storageId; // Save selection
+                        self.addInventoryItem(storageId, text);
+                        setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
+                    }
+                };
+            }
+
             document.body.appendChild(div);
+            // Focus
+            var input = document.getElementById('new-item-input-' + zone.id);
+            if (input) input.focus();
         };
 
         CraftSpaceApp.prototype.openManageModal = function (zoneId) {
@@ -945,138 +1169,6 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        };
-
-        CraftSpaceApp.prototype.openCommandCenterModal = function (zone) {
-            var self = this;
-            var existing = document.getElementById('zone-c-modal');
-            if (existing) existing.remove();
-
-            var div = document.createElement('div');
-            div.id = 'zone-c-modal';
-            div.className = "modal-backdrop flex fixed inset-0 bg-gray-900 bg-opacity-50 z-50 items-center justify-center p-4";
-
-            div.addEventListener('click', function (e) { if (e.target === div) div.remove(); });
-
-            var contentHtml = '<div class="modal-content w-full max-w-lg mx-auto rounded-2xl p-6 shadow-xl max-h-[90vh] overflow-y-auto" style="background-color: #ffffff; border: 3px solid ' + zone.color + ';">';
-
-            // Header
-            contentHtml += '<div class="flex items-center justify-between mb-6">';
-            contentHtml += '<h2 class="text-2xl font-bold" style="color: ' + zone.color + ';">Command Center</h2>';
-            contentHtml += '<button class="close-btn p-2 bg-gray-100 rounded hover:bg-gray-200">CLOSE X</button>';
-            contentHtml += '</div>';
-
-            // ---------------- DAILY TO-DO LIST ----------------
-            contentHtml += '<div class="mb-8 p-4 bg-white rounded shadow-sm border">';
-            contentHtml += '<h3 class="font-bold text-gray-700 bg-yellow-50 p-2 border-l-4 border-yellow-400 mb-4">Daily To-Do List</h3>';
-
-            // Render Tasks
-            var todos = this.data.filter(function (i) { return i.type === 'todo_item'; });
-            if (todos.length > 0) {
-                contentHtml += '<ul class="space-y-2 mb-4">';
-                todos.forEach(function (item) {
-                    var checkState = item.completed ? 'checked' : '';
-                    var textStyle = item.completed ? 'line-through text-gray-400' : 'text-gray-800 font-bold';
-                    contentHtml += '<li class="flex items-center gap-3 p-2 bg-gray-50 rounded border border-gray-100">';
-                    contentHtml += '<input type="checkbox" class="todo-check w-5 h-5 text-blue-600 rounded bg-gray-100 border-gray-300 focus:ring-blue-500 cursor-pointer" data-id="' + item.id + '" ' + checkState + '>';
-                    contentHtml += '<span class="flex-1 ' + textStyle + '">' + item.text + '</span>';
-                    contentHtml += '<button class="del-todo-btn text-red-500 hover:text-red-700 text-xs font-bold" data-id="' + item.id + '">X</button>';
-                    contentHtml += '</li>';
-                });
-                contentHtml += '</ul>';
-            } else {
-                contentHtml += '<p class="text-gray-400 italic mb-4">No tasks yet. Add one below!</p>';
-            }
-
-            // ADD TASK FORM
-            contentHtml += '<form id="add-todo-form" class="flex gap-2">';
-            contentHtml += '<input type="text" id="new-todo-input" placeholder="Add daily task..." class="flex-1 p-2 border rounded shadow-sm outline-none bg-gray-50 focus:bg-white transition-colors" autocomplete="off">';
-            contentHtml += '<button type="submit" class="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 shadow-sm transition-transform hover:scale-105">ADD</button>';
-            contentHtml += '</form>';
-            contentHtml += '</div>';
-
-            // ---------------- PROJECT STATUS ----------------
-            var status = this.projectStatus ? this.projectStatus.content : "No active project";
-            var hasActive = this.projectStatus && this.projectStatus.content && this.projectStatus.isActive;
-
-            contentHtml += '<div class="bg-blue-50 p-6 rounded-xl border border-blue-100 mb-6 text-center">';
-            contentHtml += '<h3 class="text-blue-800 font-bold uppercase text-xs tracking-wider mb-2">Current Project Focus</h3>';
-            contentHtml += '<p class="text-2xl font-extrabold text-blue-900 mb-4">' + status + '</p>';
-            if (hasActive) {
-                contentHtml += '<button id="complete-btn" class="px-4 py-2 bg-green-500 text-white font-bold rounded shadow hover:bg-green-600 transition-colors">MARK COMPLETE</button>';
-            }
-            contentHtml += '</div>';
-
-            // UPDATE STATUS FORM
-            contentHtml += '<form id="status-form" class="flex gap-2 mb-8">';
-            contentHtml += '<input type="text" id="status-input" placeholder="Set new project status..." class="flex-1 p-2 border rounded shadow-sm outline-none bg-gray-50 focus:bg-white transition-colors">';
-            contentHtml += '<button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-bold rounded hover:bg-yellow-600 shadow-sm transition-transform hover:scale-105">UPDATE</button>';
-            contentHtml += '</form>';
-
-            contentHtml += '</div>'; // End content
-            div.innerHTML = contentHtml;
-            document.body.appendChild(div);
-
-            // WIRE EVENTS
-            var closeBtn = div.querySelector('.close-btn');
-            if (closeBtn) closeBtn.onclick = function () { div.remove(); };
-
-            // Add Todo
-            var todoForm = div.querySelector('#add-todo-form');
-            if (todoForm) {
-                todoForm.onsubmit = function (e) {
-                    e.preventDefault();
-                    var input = document.getElementById('new-todo-input');
-                    var text = input.value.trim();
-                    if (text) {
-                        window.dataSdk.create({ type: 'todo_item', text: text, completed: false, createdAt: new Date().toISOString() });
-                        div.remove(); self.openCommandCenterModal(zone);
-                    }
-                };
-            }
-
-            // Checkbox & Delete Delegation
-            div.addEventListener('click', function (e) {
-                if (e.target.classList.contains('del-todo-btn')) {
-                    var id = e.target.getAttribute('data-id');
-                    window.dataSdk.delete(id);
-                    div.remove(); self.openCommandCenterModal(zone);
-                }
-                if (e.target.classList.contains('todo-check')) {
-                    var id = e.target.getAttribute('data-id');
-                    var item = self.data.find(function (i) { return i.id === id; });
-                    if (item) {
-                        item.completed = e.target.checked;
-                        window.dataSdk.update(item);
-                        div.remove(); self.openCommandCenterModal(zone);
-                    }
-                }
-            });
-
-            // Complete Project Button
-            var completeBtn = div.querySelector('#complete-btn');
-            if (completeBtn) {
-                completeBtn.onclick = function () {
-                    if (confirm("Mark '" + status + "' as complete?")) {
-                        window.dataSdk.create({ type: 'completed_project', content: status, completedAt: new Date().toISOString() });
-                        window.dataSdk.create({ type: 'project_status', content: "No active project", isActive: false });
-                        div.remove(); self.openCommandCenterModal(zone);
-                    }
-                };
-            }
-
-            // Update Status Form
-            var form = div.querySelector('#status-form');
-            if (form) {
-                form.onsubmit = function (e) {
-                    e.preventDefault();
-                    var input = document.getElementById('status-input');
-                    if (input.value.trim()) {
-                        window.dataSdk.create({ type: 'project_status', content: input.value.trim(), isActive: true });
-                        div.remove(); self.openCommandCenterModal(zone);
-                    }
-                };
-            }
         };
 
         CraftSpaceApp.prototype.setupEventListeners = function () {
