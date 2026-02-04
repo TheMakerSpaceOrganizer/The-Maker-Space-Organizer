@@ -376,9 +376,10 @@
             this.zones = this.data.filter(function (i) { return i.type === 'zone'; });
             this.inventoryItems = this.data.filter(function (i) { return i.type === 'inventory'; });
 
-            // Fix: Find the LATEST project status (Mock SDK appends, so take the last one)
-            var stats = this.data.filter(function (i) { return i.type === 'project_status'; });
-            this.projectStatus = stats.length > 0 ? stats[stats.length - 1] : null; // Take last
+            // Active Projects (Multi)
+            this.activeProjects = this.data.filter(function (i) {
+                return i.type === 'project_status' && i.isActive;
+            });
 
             this.renderZones();
         };
@@ -713,24 +714,31 @@
             contentHtml += '</form>';
             contentHtml += '</div>';
 
-            // PROJECT STATUS
-            var status = this.projectStatus ? this.projectStatus.content : "No active project";
-            var hasActive = this.projectStatus && this.projectStatus.content;
+            // ACTIVE PROJECTS
+            contentHtml += '<div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200 mb-6">';
+            contentHtml += '<h3 class="text-yellow-800 font-bold uppercase text-xs tracking-wider mb-4">Active Projects</h3>';
 
-            contentHtml += '<div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200 mb-6 text-center">';
-            contentHtml += '<h3 class="text-yellow-800 font-bold uppercase text-xs tracking-wider mb-2">Current Project Status</h3>';
-            contentHtml += '<p class="text-2xl font-extrabold text-gray-800 mb-4">' + status + '</p>';
-
-            if (hasActive) {
-                contentHtml += '<button id="complete-btn" class="px-4 py-2 bg-green-500 text-white font-bold rounded shadow hover:bg-green-600 transition-colors">MARK COMPLETE</button>';
+            if (this.activeProjects && this.activeProjects.length > 0) {
+                contentHtml += '<ul class="space-y-3 mb-6">';
+                this.activeProjects.forEach(function (proj) {
+                    contentHtml += '<li class="bg-white p-4 rounded-lg shadow-sm border border-yellow-100 flex items-center justify-between gap-4">';
+                    contentHtml += '<span class="text-lg font-bold text-gray-800 flex-1">' + proj.content + '</span>';
+                    contentHtml += '<button class="complete-project-btn px-3 py-1 bg-green-500 text-white font-bold rounded shadow hover:bg-green-600 transition-colors text-sm" data-id="' + proj.id + '">COMPLETE</button>';
+                    contentHtml += '</li>';
+                });
+                contentHtml += '</ul>';
+            } else {
+                contentHtml += '<p class="text-gray-500 italic mb-6 text-center">No active projects.</p>';
             }
+
+            // ADD PROJECT FORM
+            contentHtml += '<form id="add-project-form" class="flex gap-2">';
+            contentHtml += '<input type="text" id="new-project-input" placeholder="Start new project..." class="flex-1 p-2 border rounded shadow-sm outline-none bg-white">';
+            contentHtml += '<button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-bold rounded hover:bg-yellow-600 transition-colors">ADD +</button>';
+            contentHtml += '</form>';
             contentHtml += '</div>';
 
-            // UPDATE FORM
-            contentHtml += '<form id="status-form" class="flex gap-2 mb-8">';
-            contentHtml += '<input type="text" id="status-input" placeholder="Set new status..." class="flex-1 p-2 border rounded shadow-sm outline-none">';
-            contentHtml += '<button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-bold rounded">UPDATE</button>';
-            contentHtml += '</form>';
+            // HISTORY LOG
 
             // HISTORY LOG
             contentHtml += '<div class="mb-8">';
@@ -886,37 +894,39 @@
                 self.openManageModal(zone.id);
             };
 
-            // Complete Button
-            var completeBtn = div.querySelector('#complete-btn');
-            if (completeBtn) {
-                completeBtn.onclick = function () {
-                    if (confirm("Mark '" + status + "' as complete?")) {
+            // Complete Project Delegation
+            div.addEventListener('click', function (e) {
+                if (e.target.classList.contains('complete-project-btn')) {
+                    var id = e.target.getAttribute('data-id');
+                    var project = self.activeProjects.find(function (p) { return p.id === id; });
+
+                    if (project && confirm("Mark '" + project.content + "' as complete?")) {
                         // 1. Create Log Entry
                         var log = {
                             type: 'completed_project',
-                            content: status,
+                            content: project.content,
                             completedAt: new Date().toISOString()
                         };
                         window.dataSdk.create(log);
 
-                        // 2. Clear Status
-                        var emptyStatus = { type: 'project_status', content: "", isActive: false };
-                        window.dataSdk.create(emptyStatus);
+                        // 2. Mark as Inactive (Update)
+                        project.isActive = false;
+                        window.dataSdk.update(project);
 
                         setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
                     }
-                };
-            }
+                }
+            });
 
-            // Update Form
-            var form = div.querySelector('#status-form');
-            if (form) {
-                form.onsubmit = function (e) {
+            // Add Project Form
+            var projectForm = div.querySelector('#add-project-form');
+            if (projectForm) {
+                projectForm.onsubmit = function (e) {
                     e.preventDefault();
-                    var input = document.getElementById('status-input');
+                    var input = document.getElementById('new-project-input');
                     if (input.value.trim()) {
-                        var newStatus = { type: 'project_status', content: input.value.trim(), isActive: true };
-                        window.dataSdk.create(newStatus);
+                        var newProject = { type: 'project_status', content: input.value.trim(), isActive: true };
+                        window.dataSdk.create(newProject);
                         setTimeout(function () { self.openCommandCenterModal(zone); }, 50);
                     }
                 };
