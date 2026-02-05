@@ -1116,6 +1116,7 @@
                 contentHtml += '<li class="py-3 flex items-center justify-between gap-2">';
                 contentHtml += '<span class="font-bold text-gray-700 flex-1">' + sec.name + '</span>';
                 contentHtml += '<button class="rename-sec-btn text-xs font-bold text-blue-500 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded border border-blue-100" data-idx="' + idx + '">RENAME</button>';
+                contentHtml += '<button class="move-sec-btn text-xs font-bold text-purple-500 hover:text-purple-700 bg-purple-50 px-2 py-1 rounded border border-purple-100" data-idx="' + idx + '">MOVE</button>';
                 contentHtml += '<button class="del-sec-btn text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded border border-red-100" data-idx="' + idx + '">REMOVE</button>';
                 contentHtml += '</li>';
             });
@@ -1154,6 +1155,43 @@
                         self.saveLayouts();
                         div.remove();
                         self.openManageModal(zoneId); // Refresh
+                    }
+                }
+                // MOVE
+                if (e.target.classList.contains('move-sec-btn')) {
+                    var idx = parseInt(e.target.getAttribute('data-idx'));
+                    var shelf = self.subZones[zoneId][idx];
+                    var targetInput = prompt("Move '" + shelf.name + "' to Zone (Enter Letter A-H):");
+                    if (targetInput) {
+                        var letter = targetInput.trim().toUpperCase();
+                        var targetZone = self.zones.find(function (z) { return z.letter === letter; });
+
+                        // Handle Zone C case or allow manual ID entry? Simplest is letter match.
+                        // Zone C has no letter in basic logic usually, but let's check. 
+                        // Actually reletterZones sets letters. Zone C is '?' or similar?
+                        // If not found, try matching ID 'zone-'+letter.toLowerCase()
+
+                        if (!targetZone) {
+                            // Fallback for Zone C if user types 'C'
+                            if (letter === 'C') targetZone = { id: 'zone-c' };
+                        }
+
+                        if (targetZone) {
+                            if (targetZone.id === zoneId) {
+                                alert("It's already in this zone!");
+                                return;
+                            }
+                            // Move
+                            if (!self.subZones[targetZone.id]) self.subZones[targetZone.id] = [];
+                            self.subZones[targetZone.id].push(shelf);
+                            self.subZones[zoneId].splice(idx, 1);
+                            self.saveLayouts();
+                            div.remove();
+                            self.openManageModal(zoneId); // Refresh
+                            alert("Moved to Zone " + letter);
+                        } else {
+                            alert("Zone '" + letter + "' not found.");
+                        }
                     }
                 }
                 if (e.target.classList.contains('done-btn')) {
